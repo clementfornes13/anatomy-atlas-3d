@@ -412,6 +412,13 @@
   #bookmark-list .bm-item { display: flex; gap: 6px; }
   #bookmark-list .bm-go { flex: 1; }
   #bookmark-list .bm-del { width: auto !important; flex: none; padding: 0 14px; background: rgba(180,87,74,.12); border-color: transparent; }
+  .help-body { font-size: 13px; line-height: 1.55; color: var(--text-dim); }
+  .help-body ul { margin: 0; padding-left: 18px; }
+  .help-body li { margin: 3px 0; }
+  .help-body kbd {
+    font: 600 11px/1 ui-monospace, monospace; padding: 2px 6px; border-radius: 5px;
+    border: 1px solid var(--line); background: var(--glass-solid); color: var(--text);
+  }
   .sheet-hint { margin-top: 8px; font-size: 12px; color: var(--text-dim); line-height: 1.45; }
   #quiz-stats-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   #sheet-body button.link-btn, .link-btn {
@@ -548,6 +555,20 @@
   .kw-item:hover { background: var(--accent-soft); }
   .kw-item.todo { color: var(--text-faint); font-style: italic; cursor: default; }
   .kw-item .kw-item-badge { font-size: 10px; color: var(--text-faint); margin-left: 4px; }
+  .kw-item { display: flex; align-items: center; gap: 10px; }
+  .kw-item.done { color: var(--text-dim); }
+  .kw-check {
+    flex: none; width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--line);
+    background: transparent; color: transparent; font-size: 13px; font-weight: 700; cursor: pointer; padding: 0;
+  }
+  .kw-check:hover { border-color: var(--ok); color: var(--ok); }
+  .kw-item.done .kw-check { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .kw-progress { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: -4px 0 6px; font-size: 12.5px; color: var(--text-dim); }
+  .kw-progress label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .kw-bar { flex: 1 1 100%; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+  .kw-bar span { display: block; height: 100%; background: var(--ok); transition: width .25s; }
+  .kw-cat-count { margin-left: 8px; font-weight: 600; letter-spacing: 0; color: var(--text-faint); }
+  .kw-cat-count.full { color: var(--ok); }
 
   /* ---------- modal notatki ---------- */
   #notes-modal {
@@ -866,6 +887,10 @@
           <button id="screenshot-btn">📷 Zrzut ekranu (bez UI)</button>
           <button id="anki-export-btn">🗂️ Eksport punktów do Anki (CSV)</button>
         </div>
+        <div class="grp">
+          <h4 id="help-heading">Aide</h4>
+          <div id="help-body" class="help-body"></div>
+        </div>
       </div>
     </section>
 
@@ -1064,6 +1089,10 @@ const STRINGS = {
         loadError: "Nie udało się wczytać atlasu.", loadErrorModels: "Brak modeli 3D (bones.glb) — sprawdź połączenie z internetem.", retry: "Spróbuj ponownie",
         layerLoadFailed: (name) => "Nie udało się wczytać warstwy: " + name, structureUnavailable: "Ta struktura nie jest dostępna (warstwa się nie wczytała).",
         bookmarkDefault: "Widok", sideLeft: "lewa", sideRight: "prawa",
+        helpHeading: "Pomoc",
+        helpBody: "<ul><li>Klik = nazwa struktury, przeciągnij = obrót, kółko / dwa palce = przybliżenie.</li><li>„Otwórz tę strukturę” pokazuje ją osobno z punktami orientacyjnymi.</li><li><kbd>/</kbd> wyszukiwarka, <kbd>↑</kbd><kbd>↓</kbd> <kbd>Enter</kbd> wybór wyniku, <kbd>Esc</kbd> zamyka panele.</li><li>Quiz: <kbd>1</kbd>–<kbd>4</kbd> odpowiedź, <kbd>Enter</kbd> następne pytanie.</li></ul>",
+        firstTip: "Wskazówka: kliknij strukturę, aby zobaczyć jej nazwę, lub naciśnij / aby wyszukać.",
+        kwProgress: (d, n) => `Opanowane: ${d}/${n}`, kwHideDone: "Ukryj opanowane", kwMarkKnown: "Oznacz jako opanowane",
     },
     en: {
         pageTitle: "Anatomy atlas 3D — whole body", brandEyebrow: "Anatomy atlas", brandTitle: "Whole body · 3D",
@@ -1117,6 +1146,10 @@ const STRINGS = {
         loadError: "The atlas could not be loaded.", loadErrorModels: "3D models missing (bones.glb) — check your internet connection.", retry: "Try again",
         layerLoadFailed: (name) => "Could not load layer: " + name, structureUnavailable: "This structure is not available (its layer failed to load).",
         bookmarkDefault: "View", sideLeft: "left", sideRight: "right",
+        helpHeading: "Help",
+        helpBody: "<ul><li>Click = structure name, drag = rotate, wheel / two fingers = zoom.</li><li>“Open this structure” shows it on its own with its landmarks.</li><li><kbd>/</kbd> search, <kbd>↑</kbd><kbd>↓</kbd> <kbd>Enter</kbd> pick a result, <kbd>Esc</kbd> closes panels.</li><li>Quiz: <kbd>1</kbd>–<kbd>4</kbd> answer, <kbd>Enter</kbd> next question.</li></ul>",
+        firstTip: "Tip: click a structure to see its name, or press / to search.",
+        kwProgress: (d, n) => `Known: ${d}/${n}`, kwHideDone: "Hide known items", kwMarkKnown: "Mark as known",
     },
     fr: {
         pageTitle: "Atlas d'anatomie 3D — corps entier", brandEyebrow: "Atlas d'anatomie", brandTitle: "Corps entier · 3D",
@@ -1170,6 +1203,10 @@ const STRINGS = {
         loadError: "Impossible de charger l'atlas.", loadErrorModels: "Modèles 3D introuvables (bones.glb) — vérifiez votre connexion internet.", retry: "Réessayer",
         layerLoadFailed: (name) => "Impossible de charger la couche : " + name, structureUnavailable: "Cette structure n'est pas disponible (sa couche n'a pas pu être chargée).",
         bookmarkDefault: "Vue", sideLeft: "gauche", sideRight: "droite",
+        helpHeading: "Aide",
+        helpBody: "<ul><li>Clic = nom de la structure, glisser = rotation, molette / deux doigts = zoom.</li><li>« Ouvrir cette structure » l'affiche seule avec ses repères anatomiques.</li><li><kbd>/</kbd> recherche, <kbd>↑</kbd><kbd>↓</kbd> <kbd>Entrée</kbd> choisir un résultat, <kbd>Échap</kbd> ferme les panneaux.</li><li>Quiz : <kbd>1</kbd>–<kbd>4</kbd> pour répondre, <kbd>Entrée</kbd> question suivante.</li><li>Examens : cochez ✓ les éléments acquis pour suivre votre progression.</li></ul>",
+        firstTip: "Astuce : cliquez sur une structure pour voir son nom, ou appuyez sur / pour rechercher.",
+        kwProgress: (d, n) => `Acquis : ${d}/${n}`, kwHideDone: "Masquer les acquis", kwMarkKnown: "Marquer comme acquis",
     },
 };
 function t(key) { return STRINGS[LANG][key]; }
@@ -1254,6 +1291,7 @@ function applyLangUI() {
     set("bookmark-name", "placeholder", t("bookmarkPlaceholder"));
     set("quiz-toggle", "textContent", t("quizToggle"));
     try { refreshQuizTexts(); } catch (e) {}
+    set("help-heading", "textContent", t("helpHeading")); set("help-body", "innerHTML", t("helpBody"));
     set("screenshot-btn", "textContent", t("screenshotBtn")); set("anki-export-btn", "textContent", t("ankiExportBtn"));
     setAttr("lbl-speak", "title", t("speakTitle"));
     const openBtn = document.getElementById("open-bone-btn"); if (openBtn) openBtn.textContent = t("openBoneBtn");
@@ -2033,6 +2071,9 @@ async function init() {
     everFittedProperly = fitCameraToSkeleton();
     document.getElementById("loading").style.display = "none";
     requestRender();
+    try {
+        if (!localStorage.getItem("atlas_tip_seen")) { showToast(t("firstTip"), 7000); localStorage.setItem("atlas_tip_seen", "1"); }
+    } catch (e) {}
 }
 
 function showLoadError(e) {
@@ -3588,6 +3629,14 @@ async function selectKolokwiumItem(it) {
     }
 }
 
+// "Acquis": student odhacza szpilki, ktore juz zna (localStorage) - postep per
+// kategoria i calosc, opcja ukrycia opanowanych, zeby skupic sie na reszcie.
+const KW_DONE_KEY = "atlas_kw_done_v1";
+let kwDone = new Set();
+let kwHideDone = false;
+try { kwDone = new Set(JSON.parse(localStorage.getItem(KW_DONE_KEY) || "[]")); kwHideDone = localStorage.getItem(KW_DONE_KEY + "_hide") === "1"; } catch (e) {}
+function saveKwDone() { try { localStorage.setItem(KW_DONE_KEY, JSON.stringify([...kwDone])); localStorage.setItem(KW_DONE_KEY + "_hide", kwHideDone ? "1" : "0"); } catch (e) {} }
+const kwDoneKey = (k, it) => k + "|" + it.text;
 function renderKolokwiumPanel(k) {
     const panel = document.getElementById("kolokwium-panel");
     const groups = KOLOKWIUM_GROUPS[k];
@@ -3598,12 +3647,28 @@ function renderKolokwiumPanel(k) {
     h3.textContent = kwTitle(k);
     panel.appendChild(h3);
 
-    let total = 0, linked = 0;
-    for (const [, g] of groups) { total += g.items.length; linked += g.items.filter(it => it.id || it.boneId).length; }
+    let total = 0, linked = 0, done = 0;
+    for (const [, g] of groups) {
+        total += g.items.length; linked += g.items.filter(it => it.id || it.boneId).length;
+        done += g.items.filter(it => kwDone.has(kwDoneKey(k, it))).length;
+    }
     const sub = document.createElement("div");
     sub.className = "kw-sub";
     sub.textContent = t("kolokwiumSub")(linked, total);
     panel.appendChild(sub);
+    // pasek postepu + przelacznik "ukryj opanowane"
+    const prog = document.createElement("div");
+    prog.className = "kw-progress";
+    prog.innerHTML = `<div class="kw-bar"><span style="width:${total ? Math.round(100 * done / total) : 0}%"></span></div>`;
+    const progTxt = document.createElement("span");
+    progTxt.textContent = t("kwProgress")(done, total);
+    const hideLbl = document.createElement("label");
+    const hideCb = document.createElement("input");
+    hideCb.type = "checkbox"; hideCb.checked = kwHideDone;
+    hideCb.onchange = () => { kwHideDone = hideCb.checked; saveKwDone(); renderKolokwiumPanel(k); };
+    hideLbl.append(hideCb, document.createTextNode(" " + t("kwHideDone")));
+    prog.append(progTxt, hideLbl);
+    panel.appendChild(prog);
     if (LANG === "en") {
         const note = document.createElement("div");
         note.style.cssText = "font-size:11.5px;color:var(--text-faint);margin:-8px 0 14px;line-height:1.5";
@@ -3618,7 +3683,12 @@ function renderKolokwiumPanel(k) {
         header.className = "kw-cat-header";
         const name = document.createElement("span");
         name.className = "kw-cat-name";
+        const catDone = g.items.filter(it => kwDone.has(kwDoneKey(k, it))).length;
         name.textContent = kwCategory(category);
+        const cnt = document.createElement("span");
+        cnt.className = "kw-cat-count" + (catDone === g.items.length ? " full" : "");
+        cnt.textContent = catDone + "/" + g.items.length;
+        name.appendChild(cnt);
         header.appendChild(name);
         if (g.noteCategory && (notatkiWykladowe[k] || {})[g.noteCategory]) {
             const noteBtn = document.createElement("button");
@@ -3630,9 +3700,27 @@ function renderKolokwiumPanel(k) {
         wrap.appendChild(header);
         for (const it of g.items) {
             const isLinked = it.linkType === "mesh" || it.linkType === "landmark";
+            const key = kwDoneKey(k, it);
+            const isDone = kwDone.has(key);
+            if (isDone && kwHideDone) continue;
             const div = document.createElement("div");
-            div.className = "kw-item" + (isLinked ? "" : " todo");
-            div.textContent = kwItemText(it.text);
+            div.className = "kw-item" + (isLinked ? "" : " todo") + (isDone ? " done" : "");
+            const chk = document.createElement("button");
+            chk.className = "kw-check";
+            chk.textContent = "✓";
+            chk.title = t("kwMarkKnown");
+            chk.setAttribute("aria-pressed", isDone ? "true" : "false");
+            chk.setAttribute("aria-label", t("kwMarkKnown"));
+            chk.onclick = (e) => {
+                e.stopPropagation();
+                if (kwDone.has(key)) kwDone.delete(key); else kwDone.add(key);
+                saveKwDone();
+                const sc = panel.scrollTop;
+                renderKolokwiumPanel(k);
+                panel.scrollTop = sc;
+            };
+            div.appendChild(chk);
+            div.appendChild(document.createTextNode(kwItemText(it.text)));
             if (isLinked) {
                 div.onclick = () => selectKolokwiumItem(it);
             } else {
