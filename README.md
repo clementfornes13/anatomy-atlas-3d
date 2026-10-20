@@ -25,7 +25,7 @@ carry the whole model inside — no download, no account, works on a plane.
 | | |
 |---|---|
 | **Full-body model** | ~2,500 structures, 10 toggleable layers, Draco-GLB (~29 MB total) |
-| **English / Polish** | one-tap language switch — every structure name and the whole UI change together |
+| **French / English / Polish** | one-tap language switch (FR → EN → PL, French by default) — every structure name and the whole UI change together. French names come from `names_fr_v2.json`, an EN → FR dictionary following the French *Terminologia Anatomica* |
 | **Explode view** | one slider fans every tissue layer away from the skeleton |
 | **Isolate structure** | open a single bone/muscle full-screen with all of its named landmarks listed |
 | **Cross-section** | clipping plane on any axis |

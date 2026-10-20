@@ -73,40 +73,40 @@
 </head>
 <body>
   <header>
-    <h1>🧍 Atlas anatomiczny 3D</h1>
-    <p>Wybierz tryb nauki</p>
+    <h1 data-i18n="title">🧍 Atlas anatomiczny 3D</h1>
+    <p data-i18n="subtitle">Wybierz tryb nauki</p>
   </header>
 
   <div class="tiles">
     <a class="tile" href="./_atlas_v2/build_full/atlas_pilot_v3.html">
       <div class="art">🦴</div>
       <div class="body">
-        <h2>Całe ciało</h2>
-        <p>Pełny model Z-Anatomy: szkielet, mięśnie, naczynia, nerwy, mózg, narządy,
+        <h2 data-i18n="wholeTitle">Całe ciało</h2>
+        <p data-i18n="wholeDesc">Pełny model Z-Anatomy: szkielet, mięśnie, naczynia, nerwy, mózg, narządy,
            zęby, tkanka łączna, układ chłonny — warstwami. Punkty orientacyjne na
            powierzchni struktury, notatki wykładowe, przekrój, skalpel, tryb quizu, kolokwia.</p>
-        <span class="go">Otwórz atlas →</span>
-        <span class="meta">Z-Anatomy (pełny .blend) · ~2800 struktur · ~1640 punktów · 9 warstw ładowanych z GLB</span>
+        <span class="go" data-i18n="wholeGo">Otwórz atlas →</span>
+        <span class="meta" data-i18n="wholeMeta">Z-Anatomy (pełny .blend) · ~2800 struktur · ~1640 punktów · 9 warstw ładowanych z GLB</span>
       </div>
     </a>
 
     <a class="tile" href="./_organ_compare/index.html">
       <div class="art">🫁</div>
       <div class="body">
-        <h2>Przeglądarka narządów</h2>
-        <p>3 źródła obok siebie (Z-Anatomy · CT pacjenta · NIH). Każdy narząd osobno
+        <h2 data-i18n="organTitle">Przeglądarka narządów</h2>
+        <p data-i18n="organDesc">3 źródła obok siebie (Z-Anatomy · CT pacjenta · NIH). Każdy narząd osobno
            z segmentami i szpilkami. Podstawa czaszki z otworami, mózg z parcelacją kory,
            przekroje CT (barwy HU), unaczynienie, skalpel, ruchome okna.</p>
-        <span class="go">Otwórz przeglądarkę →</span>
-        <span class="meta">Z-Anatomy + TotalSegmentator + Visible Human · 33 narządy + czaszka + mózg 206 struktur</span>
+        <span class="go" data-i18n="organGo">Otwórz przeglądarkę →</span>
+        <span class="meta" data-i18n="organMeta">Z-Anatomy + TotalSegmentator + Visible Human · 33 narządy + czaszka + mózg 206 struktur</span>
       </div>
     </a>
   </div>
 
   <section class="apps">
-    <h2>📥 Wersja na komputer i telefon</h2>
-    <p>To samo, co wyżej, ale jako zainstalowana aplikacja — Windows i Android.</p>
-    <ul>
+    <h2 data-i18n="appsTitle">📥 Wersja na komputer i telefon</h2>
+    <p data-i18n="appsDesc">To samo, co wyżej, ale jako zainstalowana aplikacja — Windows i Android.</p>
+    <ul data-i18n="appsList">
       <li>Model 3D (~110&nbsp;MB) jest w aplikacji — nie pobiera się przy każdym wejściu, ładuje z dysku</li>
       <li>Działa w pełni offline — w bibliotece, w tramwaju, bez zasięgu</li>
       <li>Płynniej — natywne okno zamiast karty przeglądarki, mniej narzutu</li>
@@ -121,19 +121,55 @@
       </a>
       <a class="dl" href="https://github.com/Grypa-JJ/anatomy-atlas-3d/releases/latest">
         <span class="ic"><svg viewBox="0 0 24 24" fill="#7fd18c" xmlns="http://www.w3.org/2000/svg"><path d="M6 9h12v9a2 2 0 0 1-2 2h-1v2.5a1.5 1.5 0 0 1-3 0V20h-2v2.5a1.5 1.5 0 0 1-3 0V20H8a2 2 0 0 1-2-2V9Zm-2 0a1.5 1.5 0 0 1 3 0v6a1.5 1.5 0 0 1-3 0V9Zm13 0a1.5 1.5 0 0 1 3 0v6a1.5 1.5 0 0 1-3 0V9ZM7.7 7.5a5 5 0 0 1 8.6 0l1.2-2a.5.5 0 0 0-.87-.5l-1.2 2.06a5 5 0 0 0-6.66 0L7.34 4.9a.5.5 0 1 0-.87.5l1.23 2.1ZM9.5 5.6a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Zm5 0a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z"/></svg></span>
-        <span><b>Android</b><span>.apk · poza sklepem</span></span>
+        <span><b>Android</b><span data-i18n="apkMeta">.apk · poza sklepem</span></span>
       </a>
-      <span class="dl soon" title="Wymaga zbudowania na komputerze Apple — planowane">
+      <span class="dl soon" data-i18n-title="macTitle" title="Wymaga zbudowania na komputerze Apple — planowane">
         <span class="ic"><svg viewBox="0 0 24 24" fill="#8a8f9a" xmlns="http://www.w3.org/2000/svg"><path d="M16.4 12.7c0-2.5 2-3.7 2.1-3.8-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.5 1.3 0 1.8-.8 3.3-.8 1.5 0 2 .8 3.3.8 1.4 0 2.3-1.2 3.1-2.5.6-.9.9-1.4 1.4-2.4-3.6-1.4-3.6-5.9-.5-6ZM14 5.4c.7-.8 1.1-2 1-3.2-1 0-2.3.7-3 1.5-.7.7-1.2 1.9-1 3 1.1.1 2.3-.5 3-1.3Z"/></svg></span>
-        <span><b>macOS</b><span>wkrótce (potrzebny Mac)</span></span>
+        <span><b>macOS</b><span data-i18n="macMeta">wkrótce (potrzebny Mac)</span></span>
       </span>
     </div>
-    <p class="note">Pobieranie prowadzi do wydań na GitHubie. Pierwsze wydanie w przygotowaniu.
+    <p class="note" data-i18n="appsNote">Pobieranie prowadzi do wydań na GitHubie. Pierwsze wydanie w przygotowaniu.
        iPhone/iPad — nie, Apple nie pozwala instalować spoza App Store.</p>
   </section>
 
-  <footer><a href="./index.html">← Powrót do bazy pytań</a></footer>
+  <footer><a href="./index.html" data-i18n="back">← Powrót do bazy pytań</a></footer>
   <script>
+    // Francuska wersja ekranu startowego - ten sam klucz atlas_lang co w atlasie
+    // (domyślnie FR); dla PL/EN zostaje polski tekst z HTML.
+    (function () {
+      var lang = "fr";
+      try { lang = localStorage.getItem("atlas_lang") || "fr"; } catch (e) {}
+      if (lang !== "fr") return;
+      var FR = {
+        title: "🧍 Atlas d'anatomie 3D",
+        subtitle: "Choisissez un mode d'étude",
+        wholeTitle: "Corps entier",
+        wholeDesc: "Modèle Z-Anatomy complet : squelette, muscles, vaisseaux, nerfs, encéphale, organes, dents, tissu conjonctif, système lymphatique — par couches. Repères anatomiques à la surface des structures, notes de cours, coupe, scalpel, mode quiz, examens.",
+        wholeGo: "Ouvrir l'atlas →",
+        wholeMeta: "Z-Anatomy (.blend complet) · ~2800 structures · ~1640 repères · 9 couches chargées depuis des GLB",
+        organTitle: "Navigateur d'organes",
+        organDesc: "3 sources côte à côte (Z-Anatomy · scanner de patient · NIH). Chaque organe séparément, avec segments et repères. Base du crâne avec ses foramens, encéphale avec parcellisation du cortex, coupes scanner (couleurs HU), vascularisation, scalpel, fenêtres mobiles.",
+        organGo: "Ouvrir le navigateur →",
+        organMeta: "Z-Anatomy + TotalSegmentator + Visible Human · 33 organes + crâne + encéphale 206 structures",
+        appsTitle: "📥 Version ordinateur et téléphone",
+        appsDesc: "La même chose, mais en application installée — Windows et Android.",
+        appsList: "<li>Le modèle 3D (~110&nbsp;Mo) est inclus dans l'application — pas de téléchargement à chaque ouverture, chargement depuis le disque</li>" +
+          "<li>Fonctionne entièrement hors ligne — à la bibliothèque, dans le tram, sans réseau</li>" +
+          "<li>Plus fluide — fenêtre native au lieu d'un onglet de navigateur</li>" +
+          "<li>Icône sur le bureau / dans le tiroir d'applications</li>" +
+          "<li>Mises à jour automatiques — bandeau « mise à jour disponible » au démarrage</li>" +
+          "<li>Windows : installation sans droits administrateur</li>",
+        apkMeta: ".apk · hors Play Store",
+        macTitle: "Nécessite une compilation sur un ordinateur Apple — prévu",
+        macMeta: "bientôt (Mac nécessaire)",
+        appsNote: "Les téléchargements mènent aux versions publiées sur GitHub. Première version en préparation. iPhone/iPad — non, Apple n'autorise pas l'installation hors App Store.",
+        back: "← Retour à la banque de questions"
+      };
+      document.documentElement.lang = "fr";
+      document.title = "Atlas d'anatomie 3D — choix du mode";
+      document.querySelectorAll("[data-i18n]").forEach(function (el) { var v = FR[el.dataset.i18n]; if (v) el.innerHTML = v; });
+      document.querySelectorAll("[data-i18n-title]").forEach(function (el) { var v = FR[el.dataset.i18nTitle]; if (v) el.title = v; });
+    })();
     // w zainstalowanej aplikacji (Tauri/Capacitor) sekcja "pobierz aplikację" nie ma sensu
     if (window.__TAURI__ || window.Capacitor) {
       var a = document.querySelector('.apps'); if (a) a.remove();

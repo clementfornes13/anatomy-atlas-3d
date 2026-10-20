@@ -656,7 +656,7 @@
 </div>
 
 <a id="home-fab" class="fab" href="../../atlas.html" title="Wróć do wyboru trybu" aria-label="Wróć do wyboru trybu">⌂</a>
-<button id="lang-toggle" class="fab" title="Change language / Zmień język" aria-label="Change language / Zmień język">PL</button>
+<button id="lang-toggle" class="fab" title="Langue / Language / Język" aria-label="Langue / Language / Język">FR</button>
 
 <div id="search">
   <input id="search-input" type="text" placeholder="Szukaj struktury (PL / EN)…" autocomplete="off">
@@ -894,7 +894,7 @@ const IS_TOUCH_LAYOUT = (window.__detectTouchLayout && window.__detectTouchLayou
 // teoretyczne (ta sama baza co kolokwium) zostają - to osobna, wartościowa treść.
 const IS_PUBLIC_BUILD = /(^|\.)anatomy-atlas-3d\.netlify\.app$/.test(location.hostname);
 
-// ===== Język interfejsu (PL/EN) — wszystkie ~2800 struktur + 1385 punktów mają
+// ===== Język interfejsu (PL/EN/FR) — wszystkie ~2800 struktur + 1385 punktów mają
 // już nazwę angielską (dane źródłowe Z-Anatomy), więc EN działa bez generowania
 // nowych danych. Treść programowa (kolokwia, notatki wykładowe) zostaje po
 // polsku - to opis polskiego programu studiów, nie da się tego sensownie
@@ -902,17 +902,31 @@ const IS_PUBLIC_BUILD = /(^|\.)anatomy-atlas-3d\.netlify\.app$/.test(location.ho
 // nie ma mianownictwa łacińskiego, a zgadywanie ~2000 terminów byłoby ryzykiem
 // błędu wobec studentów - to osobne zadanie wymagające realnego źródła
 // (Terminologia Anatomica), nie tego przebiegu.
+// FR: nazwy francuskie nie istnieją w danych źródłowych - names_fr_v2.json to
+// słownik EN -> FR (mianownictwo wg Terminologia Anatomica, wersja francuska),
+// kluczowany dokładną nazwą EN. Brak wpisu -> pokazujemy nazwę EN.
+const LANGS = ["fr", "en", "pl"];
 let LANG = (function () {
-    try { const v = localStorage.getItem("atlas_lang"); if (v === "en" || v === "pl") return v; } catch (e) {}
-    return "pl";
+    try { const v = localStorage.getItem("atlas_lang"); if (LANGS.includes(v)) return v; } catch (e) {}
+    return "fr";
 })();
-function primaryName(x) { return (LANG === "en" ? x.en : x.pl) || x.pl || x.en || ""; }
+let FR_NAMES = {};
+const frNamesReady = fetch("names_fr_v2.json" + V2B)
+    .then(r => r.json()).then(d => { FR_NAMES = d; })
+    .catch(e => console.warn("Brak names_fr_v2.json - FR pokaże nazwy EN:", e));
+function frName(x) { return FR_NAMES[x.en] || x.en || x.pl || ""; }
+function primaryName(x) {
+    if (LANG === "fr") return frName(x);
+    return (LANG === "en" ? x.en : x.pl) || x.pl || x.en || "";
+}
 function secondaryName(x) { return (LANG === "en" ? x.pl : x.en) || ""; }
 const KIND_LABEL_EN = { bone: "bone", muscle: "muscle", fascia: "fascia", vessel: "vessel", organ: "organ", tooth: "tooth", connective: "connective tissue", brain: "brain", nerve: "nerve", lymph: "lymphatic" };
+const KIND_LABEL_FR = { bone: "os", muscle: "muscle", fascia: "fascia", vessel: "vaisseau", organ: "organe", tooth: "dent", connective: "tissu conjonctif", brain: "encéphale", nerve: "nerf", lymph: "lymphatique" };
 const KIND_NAME_PL = { bone: "Kość", muscle: "Mięsień", fascia: "Powięź", vessel: "Naczynie", organ: "Narząd", tooth: "Ząb", connective: "Tkanka łączna", brain: "Mózgowie", nerve: "Nerw", lymph: "Naczynie chłonne" };
 const KIND_NAME_EN = { bone: "Bone", muscle: "Muscle", fascia: "Fascia", vessel: "Vessel", organ: "Organ", tooth: "Tooth", connective: "Connective tissue", brain: "Brain", nerve: "Nerve", lymph: "Lymphatic vessel" };
-function kindShortLabel(kind) { return (LANG === "en" ? KIND_LABEL_EN[kind] : KIND_LABEL_PL[kind]) || (LANG === "en" ? "structure" : "struktura"); }
-function kindName(kind) { return (LANG === "en" ? KIND_NAME_EN[kind] : KIND_NAME_PL[kind]) || (LANG === "en" ? "Structure" : "Struktura"); }
+const KIND_NAME_FR = { bone: "Os", muscle: "Muscle", fascia: "Fascia", vessel: "Vaisseau", organ: "Organe", tooth: "Dent", connective: "Tissu conjonctif", brain: "Encéphale", nerve: "Nerf", lymph: "Vaisseau lymphatique" };
+function kindShortLabel(kind) { return ({ pl: KIND_LABEL_PL, en: KIND_LABEL_EN, fr: KIND_LABEL_FR }[LANG] || {})[kind] || t("structureKindFallback"); }
+function kindName(kind) { return ({ pl: KIND_NAME_PL, en: KIND_NAME_EN, fr: KIND_NAME_FR }[LANG] || {})[kind] || t("structureEyebrowDefault"); }
 
 const STRINGS = {
     pl: {
@@ -955,6 +969,9 @@ const STRINGS = {
         loadingLayer: "ładowanie warstwy…", loadingLayers: "Ładowanie warstw…",
         approxLandmark: " ⚠ przybliżone położenie", approxLandmarkTitle: "Punkt przybliżony",
         landmarkKindPoint: "punkt", structureKindFallback: "struktura",
+        noLandmarks: "Brak jeszcze dodanych punktów orientacyjnych dla tej kości.",
+        approxLandmarkLong: "Punkt przybliżony: dołączony do najbliższej znanej struktury na podstawie sąsiedztwa w słowniku, nie zmierzony geometrycznie.",
+        landmarkIdSuffix: " (punkt)", noResults: "Brak wyników", speechLang: "pl-PL", ankiApproxTag: " [przybliżone]",
     },
     en: {
         brandEyebrow: "Anatomy atlas", brandTitle: "Whole body · 3D",
@@ -996,6 +1013,53 @@ const STRINGS = {
         loadingLayer: "loading layer…", loadingLayers: "Loading layers…",
         approxLandmark: " ⚠ approximate position", approxLandmarkTitle: "Approximate point",
         landmarkKindPoint: "landmark", structureKindFallback: "structure",
+        noLandmarks: "No landmarks added yet for this structure.",
+        approxLandmarkLong: "Approximate point: attached to the nearest known structure by dictionary proximity, not geometrically measured.",
+        landmarkIdSuffix: " (landmark)", noResults: "No results", speechLang: "en-US", ankiApproxTag: " [approximate]",
+    },
+    fr: {
+        brandEyebrow: "Atlas d'anatomie", brandTitle: "Corps entier · 3D",
+        searchPlaceholder: "Rechercher une structure (FR / EN)…",
+        homeFabTitle: "Retour au choix du mode",
+        dockLayers: "Couches", dockView: "Vue", dockTools: "Outils", dockKolokwia: "Examens", dockMore: "Plus",
+        sheetTitle: { layers: "Couches", view: "Vue caméra", tools: "Outils", kolokwia: "Examens pratiques", more: "Plus" },
+        layerBones: "Os", layerMuscles: "Muscles", layerFascia: "Fascias",
+        layerFasciaTitle: "Fascias, rétinaculums, aponévroses, bourses séreuses, gaines tendineuses, septums intermusculaires.",
+        layerVessels: "Vaisseaux", layerOrgans: "Organes", layerTeeth: "Dents", layerConnective: "Tissu conjonctif",
+        layerBrain: "Encéphale", layerNerves: "Nerfs", layerLymph: "Système lymphatique",
+        layerLandmarks: "Repères anatomiques (vue d'ensemble)",
+        boneTransparency: "Transparence des os", idOnScene: "Afficher l'ID dans la scène",
+        heroExplode: "Écarter les couches", heroCollapsed: "Assemblé", heroExpanded: "Écarté", heroResetTitle: "Réassembler",
+        heroHint: "Écarte les muscles, vaisseaux, nerfs et organes du squelette.",
+        viewFront: "Face", viewBack: "Dos", viewLeft: "Gauche", viewRight: "Droite", viewTop: "Dessus", viewBottom: "Dessous", viewReset: "⟲ Réinitialiser la vue",
+        sectionToggle: "Coupe", axisX: "axe X", axisY: "axe Y", axisZ: "axe Z",
+        measureToggle: "📏 Mesurer une distance",
+        scalpelToggle: "🔪 Scalpel", scalpelToggleTitle: "Activez-le puis cliquez sur des structures pour les masquer",
+        scalpelUndo: "↩ Annuler", scalpelRestoreAll: "♻ Tout restaurer", scalpelCut: (n) => "masquées : " + n,
+        splitToggle: "🔲 Comparer (écran partagé)",
+        kolokwium1: "I — membres / tronc", kolokwium2: "II — viscères", kolokwium3: "III — tête / cou", kolokwium4: "IV — encéphale", kolokwiumOff: "✕ Quitter le mode examen",
+        kolokwiumNote: "Les sujets d'examens pratiques et les notes de cours suivent un cursus de médecine polonais et restent en polonais.",
+        kolokwiumSub: (linked, total) => linked + "/" + total + " structures disponibles dans l'atlas — cliquez pour aller à une structure",
+        kolokwiumTodoBadge: "(pas encore dans l'atlas)", kolokwiumNoteBtn: "📝 Notes",
+        bookmarksHeading: "Favoris", bookmarkPlaceholder: "nom de la vue…",
+        studyHeading: "Révision", quizToggle: "🎯 Mode quiz", quizNext: "Question suivante →",
+        quizAsk: (name) => "Cliquez : " + name, quizCorrect: "✓ Correct !", quizWrong: (name) => "✗ C'était : " + name, quizScore: (c, t) => `Score : ${c}/${t}`,
+        exportHeading: "Export", screenshotBtn: "📷 Capture d'écran (sans interface)", ankiExportBtn: "🗂️ Exporter les repères vers Anki (CSV)",
+        closeAria: "Fermer", speakTitle: "Écouter le nom",
+        structureEyebrowDefault: "Structure", landmarkEyebrow: "Repère anatomique",
+        openBoneBtn: "Ouvrir cette structure →", notesLink: "📝 Notes de cours",
+        labelHint: "cliquez sur un autre os pour changer / faites glisser pour pivoter",
+        closeBoneBtn: "← Retour au système entier", notesModalClose: "Fermer",
+        creditToggleTitle: "Sources et licences",
+        creditBody: 'Géométrie : <b>BodyParts3D</b> © The Database Center for Life Science, CC BY-SA 2.1 JP · <b>Z-Anatomy</b>, CC BY-SA.<br>Noms anglais : jeu de données source (Z-Anatomy). Noms français : traduits de l\'anglais selon la Terminologia Anatomica (version française) — à vérifier en cas de doute. Noms polonais : Słownik mian anatomicznych, Université de médecine de Łódź.<br><span style="opacity:.7">Atlas 3D · v0.1.2</span>',
+        sceneCaptionDefault: "Humain adulte", sceneCaptionIsolate: "Isolé", sceneCaptionExplode: "Couches écartées",
+        loading: (n) => `Chargement des os (${n} structures)…`,
+        loadingLayer: "chargement de la couche…", loadingLayers: "Chargement des couches…",
+        approxLandmark: " ⚠ position approximative", approxLandmarkTitle: "Point approximatif",
+        landmarkKindPoint: "repère", structureKindFallback: "structure",
+        noLandmarks: "Aucun repère anatomique ajouté pour cette structure.",
+        approxLandmarkLong: "Point approximatif : rattaché à la structure connue la plus proche d'après le dictionnaire, non mesuré géométriquement.",
+        landmarkIdSuffix: " (repère)", noResults: "Aucun résultat", speechLang: "fr-FR", ankiApproxTag: " [approximatif]",
     },
 };
 function t(key) { return STRINGS[LANG][key]; }
@@ -1055,12 +1119,12 @@ function applyLangUI() {
     }
     let kNote = document.getElementById("kolokwia-i18n-note");
     const kSection = document.querySelector('section[data-panel="kolokwia"]');
-    if (kSection && !kNote && LANG === "en") {
+    if (kSection && !kNote && LANG !== "pl") {
         kNote = document.createElement("div"); kNote.id = "kolokwia-i18n-note";
         kNote.style.cssText = "font-size:12px;color:var(--text-faint);margin-top:14px;line-height:1.5";
         kSection.appendChild(kNote);
     }
-    if (kNote) { if (LANG === "en") kNote.textContent = t("kolokwiumNote"); else kNote.remove(); }
+    if (kNote) { if (LANG !== "pl") kNote.textContent = t("kolokwiumNote"); else kNote.remove(); }
     const grpH4s = document.querySelectorAll('section[data-panel="more"] .grp h4');
     if (grpH4s[0]) grpH4s[0].textContent = t("bookmarksHeading");
     if (grpH4s[1]) grpH4s[1].textContent = t("studyHeading");
@@ -1952,7 +2016,7 @@ async function openBone(boneId) {
     if (boneLandmarks.length === 0) {
         const empty = document.createElement("div");
         empty.className = "lm-empty";
-        empty.textContent = LANG === "en" ? "No landmarks added yet for this structure." : "Brak jeszcze dodanych punktów orientacyjnych dla tej kości.";
+        empty.textContent = t("noLandmarks");
         listEl.appendChild(empty);
     } else {
         for (const lm of boneLandmarks) {
@@ -1960,9 +2024,7 @@ async function openBone(boneId) {
             item.className = "lm-item";
             item.dataset.landmarkKey = lm.pl + "|" + lm.boneId;
             item.textContent = primaryName(lm) + " — " + secondaryName(lm) + (lm.approx ? t("approxLandmark") : "");
-            if (lm.approx) item.title = LANG === "en"
-                ? "Approximate point: attached to the nearest known structure by dictionary proximity, not geometrically measured."
-                : "Punkt przybliżony: dołączony do najbliższej znanej struktury na podstawie sąsiedztwa w słowniku, nie zmierzony geometrycznie.";
+            if (lm.approx) item.title = t("approxLandmarkLong");
             item.onclick = () => {
                 document.querySelectorAll("#sb-landmarks .lm-item").forEach(el => el.classList.remove("active"));
                 item.classList.add("active");
@@ -1973,7 +2035,7 @@ async function openBone(boneId) {
                     lmRingSelected(sphere);
                     document.getElementById("lbl-pl-text").textContent = primaryName(lm);
                     document.getElementById("lbl-en").textContent = secondaryName(lm);
-                    document.getElementById("lbl-id").textContent = "ID: " + lm.boneId + (LANG === "en" ? " (landmark)" : " (punkt)");
+                    document.getElementById("lbl-id").textContent = "ID: " + lm.boneId + t("landmarkIdSuffix");
                     const lb = document.getElementById("label-box"); if (lb) lb.style.display = "block";
                 }
                 showNotesButton(document.getElementById("sb-notes-link"), LANDMARK_NOTE_INDEX.get(lm.boneId + "|" + lm.pl), { kind: "bone", pl: lm.pl, en: lm.en });
@@ -2051,12 +2113,12 @@ function runSearch(query) {
 
     const results = [];
     for (const b of bones) {
-        if (b.pl.toLowerCase().includes(q) || b.en.toLowerCase().includes(q)) {
+        if (b.pl.toLowerCase().includes(q) || b.en.toLowerCase().includes(q) || (FR_NAMES[b.en] || "").toLowerCase().includes(q)) {
             results.push({ kind: b.kind, isLandmark: false, boneId: b.id, pl: b.pl, en: b.en });
         }
     }
     for (const lm of allLandmarks) {
-        if (lm.pl.toLowerCase().includes(q) || lm.en.toLowerCase().includes(q)) {
+        if (lm.pl.toLowerCase().includes(q) || lm.en.toLowerCase().includes(q) || (FR_NAMES[lm.en] || "").toLowerCase().includes(q)) {
             results.push({ kind: "landmark", isLandmark: true, boneId: lm.boneId, pl: lm.pl, en: lm.en, landmark: lm });
         }
     }
@@ -2065,7 +2127,7 @@ function runSearch(query) {
 
     searchResultsEl.innerHTML = "";
     if (!top.length) {
-        searchResultsEl.innerHTML = `<div class="res-item" style="color:#888;font-style:italic">${LANG === "en" ? "No results" : "Brak wyników"}</div>`;
+        searchResultsEl.innerHTML = `<div class="res-item" style="color:#888;font-style:italic">${t("noResults")}</div>`;
     } else {
         for (const r of top) {
             const div = document.createElement("div");
@@ -2420,7 +2482,7 @@ document.getElementById("lbl-speak").addEventListener("click", () => {
     if (!currentSpeakName || !window.speechSynthesis) return;
     window.speechSynthesis.cancel(); // przerwij poprzednia wypowiedz jesli trwa
     const utter = new SpeechSynthesisUtterance(currentSpeakName);
-    utter.lang = LANG === "en" ? "en-US" : "pl-PL";
+    utter.lang = t("speechLang");
     window.speechSynthesis.speak(utter);
 });
 
@@ -2432,9 +2494,9 @@ document.getElementById("anki-export-btn").addEventListener("click", () => {
     const boneById = new Map(bones.map(b => [b.id, b]));
     const rows = allLandmarks.map(lm => {
         const bone = boneById.get(lm.boneId);
-        const approxTag = lm.approx ? " [przybliżone]" : "";
-        const front = (lm.pl + approxTag).replace(/;/g, ",");
-        const back = `${lm.en} (${bone ? bone.pl : "?"})`.replace(/;/g, ",");
+        const approxTag = lm.approx ? t("ankiApproxTag") : "";
+        const front = (primaryName(lm) + approxTag).replace(/;/g, ",");
+        const back = `${secondaryName(lm)} (${bone ? primaryName(bone) : "?"})`.replace(/;/g, ",");
         return `${front};${back}`;
     });
     const csv = rows.join("\n");
@@ -2817,7 +2879,7 @@ renderer.domElement.addEventListener("click", (event) => {
         const lm = mesh.userData.landmark;
         document.getElementById("lbl-pl-text").textContent = primaryName(lm);
         document.getElementById("lbl-en").textContent = secondaryName(lm);
-        document.getElementById("lbl-id").textContent = "ID: " + lm.boneId + (LANG === "en" ? " (landmark)" : " (punkt)");
+        document.getElementById("lbl-id").textContent = "ID: " + lm.boneId + t("landmarkIdSuffix");
         currentSpeakName = primaryName(lm);
         setStructMeta("label-box", "lbl-eyebrow", "bone", true);
         openBtn.style.display = "none";
@@ -3213,7 +3275,7 @@ function renderKolokwiumPanel(k) {
     sub.className = "kw-sub";
     sub.textContent = t("kolokwiumSub")(linked, total);
     panel.appendChild(sub);
-    if (LANG === "en") {
+    if (LANG !== "pl") {
         const note = document.createElement("div");
         note.style.cssText = "font-size:11.5px;color:var(--text-faint);margin:-8px 0 14px;line-height:1.5";
         note.textContent = t("kolokwiumNote");
@@ -3608,18 +3670,19 @@ window.__dbgRender = {
   });
 })();
 
-// ===== Przełącznik języka (PL/EN) — patrz blok STRINGS/applyLangUI na górze
-// pliku. Dane anatomiczne mają EN dla 100% struktur i punktów (źródło
-// Z-Anatomy), więc przełącznik działa od razu, bez generowania nowych danych.
+// ===== Przełącznik języka (FR → EN → PL) — patrz blok STRINGS/applyLangUI na
+// górze pliku. Dane anatomiczne mają EN dla 100% struktur i punktów (źródło
+// Z-Anatomy); FR pochodzi ze słownika names_fr_v2.json (EN -> FR).
 (function initLangToggle() {
     const btn = document.getElementById("lang-toggle");
     if (!btn) return;
     btn.addEventListener("click", () => {
-        LANG = LANG === "pl" ? "en" : "pl";
+        LANG = LANGS[(LANGS.indexOf(LANG) + 1) % LANGS.length];
         try { localStorage.setItem("atlas_lang", LANG); } catch (e) {}
         applyLangUI();
     });
     applyLangUI();
+    frNamesReady.then(() => { if (LANG === "fr") applyLangUI(); });
 })();
 
 animate();
