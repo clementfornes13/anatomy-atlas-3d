@@ -64,15 +64,19 @@
     }
   }
 
+  // Ten sam klucz jezyka co atlas (atlas_lang, domyslnie FR); PL/EN -> tekst polski.
+  var FR = (function () { try { return (localStorage.getItem('atlas_lang') || 'fr') === 'fr'; } catch (e) { return true; } })();
+  function tr(pl, fr) { return FR ? fr : pl; }
+
   function applyUpdate(remote, btn) {
     btn.disabled = true;
-    btn.textContent = 'Pobieranie...';
+    btn.textContent = tr('Pobieranie...', 'Téléchargement…');
 
     var fail = function (e) {
       if (e) console.error('[updater]', e);
       var url = platformDownloadUrl(remote);
       btn.disabled = false;
-      btn.textContent = url ? 'Otworz strone pobrania' : 'Blad aktualizacji';
+      btn.textContent = url ? tr('Otworz strone pobrania', 'Ouvrir la page de téléchargement') : tr('Blad aktualizacji', 'Échec de la mise à jour');
       btn.onclick = function () { openExternal(url); };
     };
 
@@ -130,7 +134,7 @@
     var txt = document.createElement('div');
     txt.style.flex = '1';
     var head = document.createElement('div');
-    head.innerHTML = 'Dostepna aktualizacja <b>' + escapeHtml(remote.version) + '</b>';
+    head.innerHTML = tr('Dostepna aktualizacja', 'Mise à jour disponible') + ' <b>' + escapeHtml(remote.version) + '</b>';
     txt.appendChild(head);
     if (remote.notes) {
       var sub = document.createElement('div');
@@ -140,12 +144,12 @@
     }
 
     var go = document.createElement('button');
-    go.textContent = 'Zaktualizuj';
+    go.textContent = tr('Zaktualizuj', 'Mettre à jour');
     go.style.cssText = 'background:#6c5ce7;color:#fff;border:0;border-radius:8px;padding:8px 14px;font:600 13px system-ui;cursor:pointer;white-space:nowrap';
     go.onclick = function () { applyUpdate(remote, go); };
 
     var later = document.createElement('button');
-    later.textContent = 'Pozniej';
+    later.textContent = tr('Pozniej', 'Plus tard');
     later.style.cssText = 'background:transparent;color:#9aa4b4;border:1px solid #3a4553;border-radius:8px;padding:8px 12px;cursor:pointer;white-space:nowrap';
     later.onclick = function () {
       try { localStorage.setItem(DISMISS_KEY, remote.version); } catch (e) {}

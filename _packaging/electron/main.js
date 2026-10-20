@@ -72,16 +72,20 @@ function setupUpdater() {
   try { ({ autoUpdater } = require('electron-updater')); }
   catch (_) { return; }
 
+  // Okna dialogowe po polsku tylko dla systemu PL; w pozostalych - po francusku.
+  const fr = !/^pl/i.test(app.getLocale() || '');
+  const tr = (pl, frText) => (fr ? frText : pl);
+
   autoUpdater.autoDownload = false;
   autoUpdater.on('error', (e) => console.warn('[updater]', e && e.message));
   autoUpdater.on('update-available', async (info) => {
     const r = await dialog.showMessageBox({
       type: 'info',
-      buttons: ['Pobierz teraz', 'Później'],
+      buttons: [tr('Pobierz teraz', 'Télécharger'), tr('Później', 'Plus tard')],
       defaultId: 0,
       cancelId: 1,
-      title: 'Dostępna aktualizacja',
-      message: `Nowa wersja atlasu: ${info.version}`,
+      title: tr('Dostępna aktualizacja', 'Mise à jour disponible'),
+      message: tr('Nowa wersja atlasu: ', 'Nouvelle version de l\'atlas : ') + info.version,
       detail: info.releaseNotes ? String(info.releaseNotes).slice(0, 500) : undefined,
     });
     if (r.response === 0) autoUpdater.downloadUpdate();
@@ -89,10 +93,10 @@ function setupUpdater() {
   autoUpdater.on('update-downloaded', async () => {
     const r = await dialog.showMessageBox({
       type: 'info',
-      buttons: ['Zainstaluj i uruchom ponownie', 'Później'],
+      buttons: [tr('Zainstaluj i uruchom ponownie', 'Installer et redémarrer'), tr('Później', 'Plus tard')],
       defaultId: 0,
-      title: 'Aktualizacja gotowa',
-      message: 'Pobrano nową wersję. Zainstalować teraz?',
+      title: tr('Aktualizacja gotowa', 'Mise à jour prête'),
+      message: tr('Pobrano nową wersję. Zainstalować teraz?', 'La nouvelle version est téléchargée. L\'installer maintenant ?'),
     });
     if (r.response === 0) autoUpdater.quitAndInstall();
   });

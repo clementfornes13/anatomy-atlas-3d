@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Atlas 3D — szkielet (prototyp)</title>
+<title>Atlas 3D</title>
 <script>
   // Layout dotykowy: telefon/tablet w pionie. Oparte na rozmiarze + realnym
   // dotyku (navigator.maxTouchPoints), nie na @media (hover/pointer) - te bywają
@@ -930,7 +930,7 @@ function kindName(kind) { return ({ pl: KIND_NAME_PL, en: KIND_NAME_EN, fr: KIND
 
 const STRINGS = {
     pl: {
-        brandEyebrow: "Atlas anatomiczny", brandTitle: "Całe ciało · 3D",
+        pageTitle: "Atlas anatomiczny 3D — całe ciało", brandEyebrow: "Atlas anatomiczny", brandTitle: "Całe ciało · 3D",
         searchPlaceholder: "Szukaj struktury (PL / EN)…",
         homeFabTitle: "Wróć do wyboru trybu",
         dockLayers: "Warstwy", dockView: "Widok", dockTools: "Narzędzia", dockKolokwia: "Kolokwia", dockMore: "Więcej",
@@ -972,9 +972,10 @@ const STRINGS = {
         noLandmarks: "Brak jeszcze dodanych punktów orientacyjnych dla tej kości.",
         approxLandmarkLong: "Punkt przybliżony: dołączony do najbliższej znanej struktury na podstawie sąsiedztwa w słowniku, nie zmierzony geometrycznie.",
         landmarkIdSuffix: " (punkt)", noResults: "Brak wyników", speechLang: "pl-PL", ankiApproxTag: " [przybliżone]",
+        noNote: "Brak jeszcze notatki dla tej grupy struktur.", noKolokwiumData: "Brak danych szpilek (szpilki_map.json się nie wczytał).",
     },
     en: {
-        brandEyebrow: "Anatomy atlas", brandTitle: "Whole body · 3D",
+        pageTitle: "Anatomy atlas 3D — whole body", brandEyebrow: "Anatomy atlas", brandTitle: "Whole body · 3D",
         searchPlaceholder: "Search structure (EN / PL)…",
         homeFabTitle: "Back to mode selection",
         dockLayers: "Layers", dockView: "View", dockTools: "Tools", dockKolokwia: "Exams", dockMore: "More",
@@ -1016,9 +1017,10 @@ const STRINGS = {
         noLandmarks: "No landmarks added yet for this structure.",
         approxLandmarkLong: "Approximate point: attached to the nearest known structure by dictionary proximity, not geometrically measured.",
         landmarkIdSuffix: " (landmark)", noResults: "No results", speechLang: "en-US", ankiApproxTag: " [approximate]",
+        noNote: "No notes yet for this group of structures.", noKolokwiumData: "Practical-exam data missing (szpilki_map.json failed to load).",
     },
     fr: {
-        brandEyebrow: "Atlas d'anatomie", brandTitle: "Corps entier · 3D",
+        pageTitle: "Atlas d'anatomie 3D — corps entier", brandEyebrow: "Atlas d'anatomie", brandTitle: "Corps entier · 3D",
         searchPlaceholder: "Rechercher une structure (FR / EN)…",
         homeFabTitle: "Retour au choix du mode",
         dockLayers: "Couches", dockView: "Vue", dockTools: "Outils", dockKolokwia: "Examens", dockMore: "Plus",
@@ -1038,7 +1040,7 @@ const STRINGS = {
         scalpelUndo: "↩ Annuler", scalpelRestoreAll: "♻ Tout restaurer", scalpelCut: (n) => "masquées : " + n,
         splitToggle: "🔲 Comparer (écran partagé)",
         kolokwium1: "I — membres / tronc", kolokwium2: "II — viscères", kolokwium3: "III — tête / cou", kolokwium4: "IV — encéphale", kolokwiumOff: "✕ Quitter le mode examen",
-        kolokwiumNote: "Les sujets d'examens pratiques et les notes de cours suivent un cursus de médecine polonais et restent en polonais.",
+        kolokwiumNote: "Les sujets d'examens pratiques et les notes de cours suivent un cursus de médecine polonais (traduits en français).",
         kolokwiumSub: (linked, total) => linked + "/" + total + " structures disponibles dans l'atlas — cliquez pour aller à une structure",
         kolokwiumTodoBadge: "(pas encore dans l'atlas)", kolokwiumNoteBtn: "📝 Notes",
         bookmarksHeading: "Favoris", bookmarkPlaceholder: "nom de la vue…",
@@ -1060,12 +1062,14 @@ const STRINGS = {
         noLandmarks: "Aucun repère anatomique ajouté pour cette structure.",
         approxLandmarkLong: "Point approximatif : rattaché à la structure connue la plus proche d'après le dictionnaire, non mesuré géométriquement.",
         landmarkIdSuffix: " (repère)", noResults: "Aucun résultat", speechLang: "fr-FR", ankiApproxTag: " [approximatif]",
+        noNote: "Pas encore de note pour ce groupe de structures.", noKolokwiumData: "Données d'examen manquantes (szpilki_map.json n'a pas pu être chargé).",
     },
 };
 function t(key) { return STRINGS[LANG][key]; }
 
 function applyLangUI() {
     document.documentElement.lang = LANG;
+    document.title = t("pageTitle");
     const set = (id, prop, val) => { const el = document.getElementById(id); if (el) el[prop] = val; };
     const setAttr = (id, attr, val) => { const el = document.getElementById(id); if (el) el.setAttribute(attr, val); };
     const langBtn = document.getElementById("lang-toggle"); if (langBtn) langBtn.textContent = LANG.toUpperCase();
@@ -1119,12 +1123,12 @@ function applyLangUI() {
     }
     let kNote = document.getElementById("kolokwia-i18n-note");
     const kSection = document.querySelector('section[data-panel="kolokwia"]');
-    if (kSection && !kNote && LANG !== "pl") {
+    if (kSection && !kNote && LANG === "en") {
         kNote = document.createElement("div"); kNote.id = "kolokwia-i18n-note";
         kNote.style.cssText = "font-size:12px;color:var(--text-faint);margin-top:14px;line-height:1.5";
         kSection.appendChild(kNote);
     }
-    if (kNote) { if (LANG !== "pl") kNote.textContent = t("kolokwiumNote"); else kNote.remove(); }
+    if (kNote) { if (LANG === "en") kNote.textContent = t("kolokwiumNote"); else kNote.remove(); }
     const grpH4s = document.querySelectorAll('section[data-panel="more"] .grp h4');
     if (grpH4s[0]) grpH4s[0].textContent = t("bookmarksHeading");
     if (grpH4s[1]) grpH4s[1].textContent = t("studyHeading");
@@ -1156,6 +1160,7 @@ function applyLangUI() {
     } catch (e) {}
     try { refreshStructEyebrow("label-box", "lbl-eyebrow"); refreshStructEyebrow("sidebar", "sb-eyebrow"); } catch (e) {}
     try { setSceneCaption(); } catch (e) {}
+    try { if (activeKolokwium) renderKolokwiumPanel(activeKolokwium); } catch (e) {}
 }
 
 const scene = new THREE.Scene();
@@ -1928,12 +1933,14 @@ async function init() {
     // Dane szpilek z kolokwiow (opcjonalne - patrz tryb kolokwium nizej) - brak
     // tych plikow nie powinien blokowac reszty atlasu, stad osobny try/catch.
     try {
-        const [smRes, stRes, nwRes] = await Promise.all([
+        const [smRes, stRes, nwRes, kfRes] = await Promise.all([
             fetch("szpilki_map_v2.json" + V2B), fetch("szpilki_todo_v2.json" + V2B), fetch("notatki_wykladowe.json" + V2B),
+            fetch("kolokwia_fr_v2.json" + V2B).catch(() => null),
         ]);
         szpilkiMap = await smRes.json();
         szpilkiTodo = await stRes.json();
         notatkiWykladowe = await nwRes.json();
+        try { if (kfRes && kfRes.ok) KOLOKWIA_FR = await kfRes.json(); } catch (e) {}
         buildKolokwiumIndexes();
     } catch (e) {
         console.warn("Brak danych szpilek/notatek kolokwiow - tryb kolokwium bedzie niedostepny:", e);
@@ -3088,6 +3095,17 @@ const KOLOKWIUM_META = {
 const ALL_LAYER_KINDS = ["bone", "muscle", "vessel", "organ", "tooth", "connective", "brain", "nerve", "lymph"];
 const LAYER_CHECKBOX_ID = { bone: "layer-bones", muscle: "layer-muscles", fascia: "layer-fascia", vessel: "layer-vessels", organ: "layer-organs", tooth: "layer-teeth", connective: "layer-connective", brain: "layer-brain", nerve: "layer-nerves", lymph: "layer-lymph" };
 
+// FR: tłumaczenia list szpilek, kategorii i notatek (kolokwia_fr_v2.json),
+// kluczowane oryginalnym polskim tekstem - dane źródłowe zostają po polsku.
+let KOLOKWIA_FR = { items: {}, categories: {}, notes: {}, kolokwiumTitles: {} };
+function kwItemText(text) { return (LANG === "fr" && KOLOKWIA_FR.items[text]) || text; }
+function kwCategory(cat) { return (LANG === "fr" && KOLOKWIA_FR.categories[cat]) || cat; }
+function kwTitle(k) { return (LANG === "fr" && KOLOKWIA_FR.kolokwiumTitles[k]) || (KOLOKWIUM_META[k] || {}).title || ("Kolokwium " + k); }
+function kwNote(k, cat) {
+    const pl = (notatkiWykladowe[k] || {})[cat];
+    return (LANG === "fr" && (KOLOKWIA_FR.notes[k] || {})[cat]) || pl;
+}
+
 let MESH_NOTE_INDEX = new Map();
 let LANDMARK_NOTE_INDEX = new Map();
 let KOLOKWIUM_GROUPS = {}; // kolokwium -> Map(kategoria -> {noteCategory, items:[...]})
@@ -3209,10 +3227,10 @@ function formatNoteText(text) {
     return esc(text || "").replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 }
 function openNotesModal(kolokwium, noteCategory) {
-    const text = (notatkiWykladowe[kolokwium] || {})[noteCategory];
-    document.getElementById("notes-modal-title").textContent = noteCategory;
-    document.getElementById("notes-modal-sub").textContent = (KOLOKWIUM_META[kolokwium] || {}).title || ("Kolokwium " + kolokwium);
-    document.getElementById("notes-modal-body").innerHTML = text ? formatNoteText(text) : "Brak jeszcze notatki dla tej grupy struktur.";
+    const text = kwNote(kolokwium, noteCategory);
+    document.getElementById("notes-modal-title").textContent = kwCategory(noteCategory);
+    document.getElementById("notes-modal-sub").textContent = kwTitle(kolokwium);
+    document.getElementById("notes-modal-body").innerHTML = text ? formatNoteText(text) : t("noNote");
     document.getElementById("notes-modal").style.display = "flex";
 }
 function closeNotesModal() { document.getElementById("notes-modal").style.display = "none"; }
@@ -3266,7 +3284,7 @@ function renderKolokwiumPanel(k) {
     panel.innerHTML = "";
     const meta = KOLOKWIUM_META[k];
     const h3 = document.createElement("h3");
-    h3.textContent = meta.title;
+    h3.textContent = kwTitle(k);
     panel.appendChild(h3);
 
     let total = 0, linked = 0;
@@ -3275,7 +3293,7 @@ function renderKolokwiumPanel(k) {
     sub.className = "kw-sub";
     sub.textContent = t("kolokwiumSub")(linked, total);
     panel.appendChild(sub);
-    if (LANG !== "pl") {
+    if (LANG === "en") {
         const note = document.createElement("div");
         note.style.cssText = "font-size:11.5px;color:var(--text-faint);margin:-8px 0 14px;line-height:1.5";
         note.textContent = t("kolokwiumNote");
@@ -3289,7 +3307,7 @@ function renderKolokwiumPanel(k) {
         header.className = "kw-cat-header";
         const name = document.createElement("span");
         name.className = "kw-cat-name";
-        name.textContent = category;
+        name.textContent = kwCategory(category);
         header.appendChild(name);
         if (g.noteCategory && (notatkiWykladowe[k] || {})[g.noteCategory]) {
             const noteBtn = document.createElement("button");
@@ -3303,7 +3321,7 @@ function renderKolokwiumPanel(k) {
             const isLinked = it.linkType === "mesh" || it.linkType === "landmark";
             const div = document.createElement("div");
             div.className = "kw-item" + (isLinked ? "" : " todo");
-            div.textContent = it.text;
+            div.textContent = kwItemText(it.text);
             if (isLinked) {
                 div.onclick = () => selectKolokwiumItem(it);
             } else {
@@ -3333,7 +3351,7 @@ document.querySelectorAll("#kolokwium-buttons button").forEach(btn => {
             return;
         }
         if (!KOLOKWIUM_GROUPS[k]) {
-            statusEl.textContent = "Brak danych szpilek (szpilki_map.json się nie wczytał).";
+            statusEl.textContent = t("noKolokwiumData");
             return;
         }
         if (activeKolokwium === null) {

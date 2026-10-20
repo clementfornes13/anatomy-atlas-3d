@@ -360,7 +360,47 @@ if (!_ocLocal) {
 const PAL = [0xd98c5f,0x6faed1,0x74c69d,0xe0b04a,0xcf7d8e,0x9d8ec9,0x8bbf5a,0x64b6ac,0xe08a6b,0x7fa8d9,0xbf9b56,0xcf9dc9,0x9ab04a,0x5fae9d];
 const sanitize = n => n.replace(/\s/g,'_').replace(/[.:\/\[\]]/g,'');
 const enName = n => (n||'').replace(/\.j$/,'').replace(/\.(l|r)$/,(_,s)=>' ('+(s=='l'?'left':'right')+')');
-const plShort = p => p && p.pl ? p.pl.split(';')[0].trim() : (p ? enName(p.name) : '');
+const plShortPl = p => p && p.pl ? p.pl.split(';')[0].trim() : (p ? enName(p.name) : '');
+
+// ---- język (FR/PL) — ten sam klucz atlas_lang co atlas (domyślnie FR) -----
+// organs_fr.json: ui = teksty interfejsu (PL -> FR), pl = nazwy struktur (PL -> FR);
+// nazwy EN z Z-Anatomy tłumaczy słownik atlasu names_fr_v2.json.
+const OC_FR = (()=>{ try { return (localStorage.getItem('atlas_lang') || 'fr') === 'fr'; } catch(e){ return true; } })();
+let OCFR = { ui:{}, pl:{} }, OCFR_EN = {};
+const L = s => (OC_FR && (OCFR.ui[s] || OCFR.pl[s])) || s;
+const FR = (pl, fr) => OC_FR ? fr : pl;
+const enCore = n => { n = (n||'').trim(); for (let i=0;i<3;i++) n = n.replace(/(\.(j|l|r|g|\d{3})|_\d+)$/,'').trim(); return n.replace(/^[\(\[](.*)[\)\]]$/,'$1').trim(); };
+function frName(p){
+  if (!p) return null;
+  const pl = p.pl || '';
+  const f = OCFR.pl[pl] || OCFR.pl[pl.replace(/ ○$/,'')] || OCFR.pl[pl.split(';')[0].trim()];
+  if (f) return f + (/ ○$/.test(pl) ? ' ○' : '');
+  for (const en of [p.en, p.name]) {
+    if (!en) continue;
+    const c = enCore(en);
+    const e = OCFR_EN[en] || OCFR_EN[c] || OCFR_EN['('+c+')'];
+    if (e) return enCore(e);
+  }
+  return null;
+}
+const plShort = p => (OC_FR && frName(p)) || plShortPl(p);
+const nameAny = v => OC_FR ? (OCFR.pl[v] || (OCFR_EN[v] && enCore(OCFR_EN[v])) || v) : v;
+async function loadOcLang(){
+  if (!OC_FR) return;
+  document.documentElement.lang = 'fr';
+  document.title = "Navigateur d'organes — 3 sources";
+  try { OCFR = await (await fetch('./organs_fr.json'+CB)).json(); } catch(e){ console.warn('organs_fr.json', e); }
+  try { OCFR_EN = await (await fetch('../_atlas_v2/build_full/names_fr_v2.json'+CB)).json(); } catch(e){ console.warn('names_fr_v2.json', e); }
+  // statyczny HTML: podmień teksty (węzły tekstowe + title/aria-label) wg słownika ui
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = w.nextNode(); n; n = w.nextNode()){
+    const t = n.nodeValue.replace(/\u00a0/g,' ').trim();
+    if (t && OCFR.ui[t]) n.nodeValue = n.nodeValue.replace(n.nodeValue.trim(), OCFR.ui[t]);
+  }
+  document.querySelectorAll('[title],[aria-label]').forEach(el=>{
+    for (const a of ['title','aria-label']){ const v = el.getAttribute(a); if (v && OCFR.ui[v]) el.setAttribute(a, OCFR.ui[v]); }
+  });
+}
 
 // ---- jeden panel 3D --------------------------------------------------------
 function makeViewer(canvasId, infoId, badgeId){
@@ -603,15 +643,15 @@ function renderZA(){
       m.material.emissive.setHex(gold ? 0x3a2c00 : 0);
     });
     ZA.frame(ZA.meshes.filter(m=>m.visible));
-    ZA.badge.textContent = 'cały układ trzewny';
+    ZA.badge.textContent = L('cały układ trzewny');
     return;
   }
   // narządy spoza VisceralSystem (serce z CardioVascular itd.)
   if (ZA_EXTRA[current]){ return renderZAExtra(ZA_EXTRA[current]); }
   if (EXTRA_NO_ZA.has(current)){
     ZA.meshes.forEach(m=> m.visible=false);
-    ZA.badge.textContent = 'brak w Z-Anatomy VisceralSystem';
-    ZA.info.innerHTML = '<span class="en">Ten narząd jest w innym pliku Z-Anatomy (LymphoidOrgans) — porównaj CT i NIH obok.</span>';
+    ZA.badge.textContent = L('brak w Z-Anatomy VisceralSystem');
+    ZA.info.innerHTML = '<span class="en">' + L('Ten narząd jest w innym pliku Z-Anatomy (LymphoidOrgans) — porównaj CT i NIH obok.') + '</span>';
     return;
   }
   const items = MAN.parts.filter(p=>p.organ===current);
@@ -632,12 +672,12 @@ function renderZA(){
   showPinsForOrgan(showPin ? current : null);
   ZA.frame(ZA.meshes.filter(m=>m.visible));
   const n = items.filter(p=>!p.label&&!p.segment).length, ns = items.filter(p=>p.segment).length, nl = items.filter(p=>p.label).length;
-  ZA.badge.textContent = `${n} bryły` + (ns?` · ${ns} segm.`:'') + (nl?` · ${nl} ${showPin?'szpilek':'powierzchni'}`:'');
+  ZA.badge.textContent = `${n} ${FR('bryły','volumes')}` + (ns?` · ${ns} segm.`:'') + (nl?` · ${nl} ${showPin?FR('szpilek','repères'):FR('powierzchni','surfaces')}`:'');
   document.getElementById('tg-seg').classList.toggle('on', showSeg);
   document.getElementById('tg-lab').classList.toggle('on', showLab);
   document.getElementById('tg-pin').classList.toggle('on', showPin);
   // lista w info
-  ZA.info.innerHTML = `<div class="pick" id="zpk">klik w strukturę…</div>
+  ZA.info.innerHTML = `<div class="pick" id="zpk">${L('klik w strukturę…')}</div>
     <div class="lst">${items.sort((a,b)=>(a.label-b.label)||(a.segment-b.segment)||(b.v-a.v))
       .map(p=>`<span data-k="${p.key}" data-kind="${p.label?'lab':p.segment?'seg':'x'}">${plShort(p)}${p.label?' ▪':p.segment?' ◆':''}</span>`).join('')}</div>`;
   ZA.info.querySelectorAll('span[data-k]').forEach(s=> s.onclick = ()=>{
@@ -653,7 +693,7 @@ function renderZA(){
 function pickZA(m){
   if (!m){   // klik w pustkę = odznacz
     if (selMeshName || selPinKey){ clearSel(); ZA.suppressFrame = true; renderZA(); scalePins(); setSelLabel(null);
-      const el = document.getElementById('zpk'); if (el) el.textContent = 'klik w strukturę…'; }
+      const el = document.getElementById('zpk'); if (el) el.textContent = L('klik w strukturę…'); }
     return;
   }
   // skalpel: klik chowa strukturę (odsłania to, co pod spodem)
@@ -662,7 +702,7 @@ function pickZA(m){
     updateCutBtns();
     const el = document.getElementById('zpk');
     const p = ZA_BY.get(m.name) || ZA.extraBy?.get(m.name);
-    if (el) el.innerHTML = `🔪 wycięto: ${p?plShort(p):enName(m.name)} <span class="en">(${cutStack.length} usuniętych)</span>`;
+    if (el) el.innerHTML = `🔪 ${FR('wycięto','masqué')}: ${p?plShort(p):enName(m.name)} <span class="en">(${cutStack.length} ${FR('usuniętych','retirés')})</span>`;
     return;
   }
   const el = document.getElementById('zpk');
@@ -673,7 +713,7 @@ function pickZA(m){
     linkName = p.bone || (ZA.meshes.some(x=>x.name===p.key) ? p.key : null);
     ZA.suppressFrame = true; renderZA();
     const linkPl = linkName ? (plShort(ZA_BY.get(linkName)||ZA.extraBy?.get(linkName)) || enName(linkName)) : '';
-    const body = `🔖 <b>${plShort(p)}</b>${p.approx?' <span style="color:var(--info-2)">○ pozycja przybliżona</span>':''}`
+    const body = `🔖 <b>${plShort(p)}</b>${p.approx?' <span style="color:var(--info-2)">○ '+FR('pozycja przybliżona','position approximative')+'</span>':''}`
       + `<br><span style="color:var(--info-2);font-size:11px">${enName(p.name)}</span>`
       + (linkPl ? `<br><span style="color:var(--info-accent);font-size:11.5px">▸ ${linkPl}</span>` : '');
     setSelLabel(body);
@@ -705,6 +745,7 @@ const EXTRA_NO_ZA = new Set(["Żeńskie narządy płciowe","Sutek","Rdzeń kręg
 const EXTRA_NO_CT = new Set(["Mózg","Oko","Ucho","Grasica","Żeńskie narządy płciowe","Sutek","Czaszka — podstawa"]);
 const EXTRA_NO_NIH = new Set(["Czaszka — podstawa"]);
 const FOSSA = { ant:{c:0x7ec8ff,pl:'dół przedni'}, med:{c:0xf6c453,pl:'dół środkowy'}, post:{c:0xe0776b,pl:'dół tylny'}, ext:{c:0x9d8ec9,pl:'podstawa zewnętrzna'} };
+const fossaName = fk => L(FOSSA[fk].pl);
 async function renderZAExtra(E){
   if (!E.loaded){
     const man = await (await fetch(E.man + CB)).json();
@@ -738,11 +779,11 @@ async function renderZAExtra(E){
   ZA.meshesActive = E.meshes;           // do raycastu
   ZA.frame(focus.length ? focus : E.meshes);
   const nc = E.meshes.length - focus.length;
-  ZA.badge.textContent = `${focus.length} struktur${nc?` (+${nc} tło)`:''} · ${E.src || 'Z-Anatomy'}`;
+  ZA.badge.textContent = `${focus.length} ${FR('struktur','structures')}${nc?` (+${nc} ${FR('tło','contexte')})`:''} · ${E.src || 'Z-Anatomy'}`;
   document.getElementById('tg-seg').classList.remove('on');
   document.getElementById('tg-lab').classList.remove('on');
   document.getElementById('tg-pin').classList.remove('on');
-  ZA.info.innerHTML = `<div class="pick" id="zpk">klik w strukturę…</div>
+  ZA.info.innerHTML = `<div class="pick" id="zpk">${L('klik w strukturę…')}</div>
     <div class="lst">${[...E.by.values()].map(p=>`<span data-k="${p.key}">${plShort(p)}${p.context?' ▫':''}</span>`).join('')}</div>`;
   ZA.info.querySelectorAll('span[data-k]').forEach(s=> s.onclick=()=> pickZA(E.meshes.find(m=>m.name===s.dataset.k)));
   markListSel();
@@ -776,7 +817,7 @@ async function renderSkull(E){
       const f = FOSSA[p.fossa] || FOSSA.med;
       const pin = makeDot(f.c, p.approx ? r*0.82 : r, p.approx);
       pin.position.set(p.pos[0], p.pos[1], p.pos[2]);
-      pin.userData.part = { pl:p.pl + (p.approx?' ○':''), name:p.en, key:'skp'+i, fossa:p.fossa, approx:p.approx, bone:p.bone };
+      pin.userData.part = { pl:plShort(p) + (p.approx?' ○':''), name:p.en, key:'skp'+i, fossa:p.fossa, approx:p.approx, bone:p.bone };
       PIN_GRP.add(pin); skullPins.push(pin);
     });
     E._pinsBuilt = true;
@@ -791,17 +832,17 @@ async function renderSkull(E){
   const sb = new THREE.Box3(); E.meshes.forEach(m=> sb.expandByObject(m));
   sb.max.y = SKULL_CLIP.constant + 6;                  // kadruj tylko część poniżej cięcia
   ZA.frame(sb);
-  ZA.badge.textContent = `${E.meshes.length} kości · ${E.lmData.pins.length} punktów (${E.lmData.pins.filter(x=>x.approx).length} przybl.) · ${E.src}`;
+  ZA.badge.textContent = `${E.meshes.length} ${FR('kości','os')} · ${E.lmData.pins.length} ${FR('punktów','points')} (${E.lmData.pins.filter(x=>x.approx).length} ${FR('przybl.','approx.')}) · ${E.src}`;
   ['tg-seg','tg-lab','tg-pin'].forEach(id=> document.getElementById(id).classList.remove('on'));
   // lista pogrupowana wg dołu
   const order = ['ant','med','post','ext'];
   const groups = order.map(fk=>{
     const items = E.lmData.pins.map((p,i)=>({p,i})).filter(x=>x.p.fossa===fk);
     if (!items.length) return '';
-    return `<div style="margin-top:5px;color:${'#'+FOSSA[fk].c.toString(16).padStart(6,'0')};font-weight:600">${FOSSA[fk].pl}</div>
-      <div class="lst">${items.map(x=>`<span data-i="${x.i}">${x.p.pl}${x.p.approx?' ○':''}</span>`).join('')}</div>`;
+    return `<div style="margin-top:5px;color:${'#'+FOSSA[fk].c.toString(16).padStart(6,'0')};font-weight:600">${fossaName(fk)}</div>
+      <div class="lst">${items.map(x=>`<span data-i="${x.i}">${plShort(x.p)}${x.p.approx?' ○':''}</span>`).join('')}</div>`;
   }).join('');
-  ZA.info.innerHTML = `<div class="pick" id="zpk">klik w otwór / wyrostek…</div>${groups}`;
+  ZA.info.innerHTML = `<div class="pick" id="zpk">${L('klik w otwór / wyrostek…')}</div>${groups}`;
   ZA.info.querySelectorAll('span[data-i]').forEach(s=> s.onclick=()=> pickZA(skullPins[+s.dataset.i]));
   scalePins(); markListSel();
 }
@@ -842,17 +883,17 @@ async function renderBrain(E){
   ['tg-seg','tg-lab','tg-pin'].forEach(id=> document.getElementById(id).classList.remove('on'));
   const cnt = {}; E.by.forEach(p=> cnt[p.group]=(cnt[p.group]||0)+1);
   const vis = E.meshes.filter(m=>m.visible).length;
-  ZA.badge.textContent = `${vis}/${E.meshes.length} struktur · parcelacja · ${E.src}`;
+  ZA.badge.textContent = `${vis}/${E.meshes.length} ${FR('struktur · parcelacja','structures · parcellisation')} · ${E.src}`;
   const order = ['kora-zakret','kora-bruzda','kora-plat','jadra-podstawy','miedzymozgowie','pien','mozdzek','komory','drogi','jadra-nn','inne'];
   const blocks = order.filter(g=>cnt[g]).map(g=>{
     const col = '#'+BGRP[g].c.toString(16).padStart(6,'0');
     const off = brainHidden.has(g);
-    const items = [...E.by.values()].filter(p=>p.group===g).sort((a,b)=>a.pl.localeCompare(b.pl,'pl'));
+    const items = [...E.by.values()].filter(p=>p.group===g).sort((a,b)=>plShort(a).localeCompare(plShort(b),FR('pl','fr')));
     return `<div class="bgh" data-g="${g}" style="margin-top:5px;cursor:pointer;font-weight:600;color:${off?'#5b6472':col}">
-        ${off?'▸':'▾'} ${BGRP[g].pl} <span style="opacity:.6">${cnt[g]}</span></div>
-      ${off?'':`<div class="lst">${items.map(p=>`<span data-k="${p.key}">${p.pl}</span>`).join('')}</div>`}`;
+        ${off?'▸':'▾'} ${L(BGRP[g].pl)} <span style="opacity:.6">${cnt[g]}</span></div>
+      ${off?'':`<div class="lst">${items.map(p=>`<span data-k="${p.key}">${plShort(p)}</span>`).join('')}</div>`}`;
   }).join('');
-  ZA.info.innerHTML = `<div class="pick" id="zpk">skalpel: klik chowa strukturę · klik nagłówka = ukryj grupę</div>${blocks}`;
+  ZA.info.innerHTML = `<div class="pick" id="zpk">${L('skalpel: klik chowa strukturę · klik nagłówka = ukryj grupę')}</div>${blocks}`;
   ZA.info.querySelectorAll('.bgh').forEach(h=> h.onclick=()=>{
     const g=h.dataset.g; brainHidden.has(g)?brainHidden.delete(g):brainHidden.add(g); ZA.suppressFrame=true; renderBrain(E);
     if (selMeshName||linkName) dimOthersExcept(selMeshName||linkName);
@@ -877,8 +918,8 @@ function renderCT(){
   if (EXTRA_NO_CT.has(current)){
     CT.meshes.forEach(m=> m.visible=false);
     const head = current==='Mózg'||current==='Oko'||current==='Ucho';
-    CT.badge.textContent = 'brak w segmentacji CT';
-    CT.info.innerHTML = `<span class="en">${head ? 'Skany CT dostępnych osobników nie sięgają głowy.' : 'TotalSegmentator nie segmentuje tej struktury — porównaj Z-Anatomy i NIH.'}</span>`;
+    CT.badge.textContent = L('brak w segmentacji CT');
+    CT.info.innerHTML = `<span class="en">${head ? L('Skany CT dostępnych osobników nie sięgają głowy.') : L('TotalSegmentator nie segmentuje tej struktury — porównaj Z-Anatomy i NIH.')}</span>`;
     return;
   }
   const wanted = current
@@ -891,27 +932,27 @@ function renderCT(){
     m.material.emissive.setHex(0);
   });
   if (!wanted.length){
-    CT.badge.textContent = 'brak w tym osobniku CT';
-    CT.info.innerHTML = '<span class="en">Ten narząd nie mieści się w polu skanu s0086.</span>';
+    CT.badge.textContent = L('brak w tym osobniku CT');
+    CT.info.innerHTML = '<span class="en">' + L('Ten narząd nie mieści się w polu skanu s0086.') + '</span>';
     return;
   }
   CT.frame(wanted);
-  CT.badge.textContent = current ? `${wanted.length} bryła CT` : 'cały układ z CT';
-  CT.info.innerHTML = `<div class="pick" id="ctpk">klik w strukturę…</div>
-    <div class="lst">${wanted.map(m=>{const p=CT_BY.get(m.name);return `<span data-k="${m.name}">${p?p.pl:m.name}</span>`}).join('')}</div>`;
+  CT.badge.textContent = current ? `${wanted.length} ${FR('bryła CT','volume(s) scanner')}` : L('cały układ z CT');
+  CT.info.innerHTML = `<div class="pick" id="ctpk">${L('klik w strukturę…')}</div>
+    <div class="lst">${wanted.map(m=>{const p=CT_BY.get(m.name);return `<span data-k="${m.name}">${p?plShort(p):m.name}</span>`}).join('')}</div>`;
   CT.info.querySelectorAll('span[data-k]').forEach(s=> s.onclick=()=>{ const m=CT.meshes.find(x=>x.name===s.dataset.k); pickCT(m); });
 }
 function pickCT(m){
   if (!m) return;
   if (m.userData && m.userData.vessel){
     const el = document.getElementById('ctpk');
-    if (el) el.innerHTML = `🩸 ${m.userData.vessel} <span class="en">— ${m.userData.kind==='artery'?'tętnica':'żyła'} (Z-Anatomy, schemat)</span>`;
+    if (el) el.innerHTML = `🩸 ${nameAny(m.userData.vessel)} <span class="en">— ${m.userData.kind==='artery'?L('tętnica'):L('żyła')} (Z-Anatomy, ${FR('schemat','schéma')})</span>`;
     return;
   }
   CT.meshes.forEach(x=>{ x.material.emissive.setHex(x===m?0x3a2c00:0); });
   const p = CT_BY.get(m.name);
   const el = document.getElementById('ctpk');
-  if (el) el.innerHTML = `▶ ${p?p.pl:m.name} <span class="en">— segmentacja CT</span>`;
+  if (el) el.innerHTML = `▶ ${p?plShort(p):m.name} <span class="en">— ${L('segmentacja CT')}</span>`;
   if (m.visible) CT.frame([m]);
 }
 
@@ -943,7 +984,7 @@ async function renderVess(){
   if (!VESS_GRP.visible){ VESS.meshes.forEach(m=> m.visible = false); CT.extraPickable = []; }
   if (!showVess || !current) return;
   if (subj !== 's0086'){
-    CT.info.innerHTML += '<div class="en" style="color:#d98c98">Nałożenie naczyń jest wykalibrowane tylko dla osobnika s0086.</div>';
+    CT.info.innerHTML += '<div class="en" style="color:#d98c98">' + L('Nałożenie naczyń jest wykalibrowane tylko dla osobnika s0086.') + '</div>';
     return;
   }
   await loadVess();
@@ -951,39 +992,39 @@ async function renderVess(){
   VESS.meshes.forEach(m=> m.visible = mine.includes(m));
   CT.extraPickable = mine.filter(m=>m.visible);
   if (!mine.length){
-    CT.info.innerHTML += '<div class="en">Brak wyodrębnionego unaczynienia dla tego narządu.</div>';
+    CT.info.innerHTML += '<div class="en">' + L('Brak wyodrębnionego unaczynienia dla tego narządu.') + '</div>';
     return;
   }
   const organMeshes = CT.meshes.filter(m=> m.visible && CT_BY.get(m.name)?.organ === current);
   CT.frame([...organMeshes, ...mine]);
   const a = mine.filter(m=>m.userData.kind==='artery'), v = mine.filter(m=>m.userData.kind==='vein');
-  const names = k => [...new Set(k.map(m=>m.userData.vessel))].join(', ');
+  const names = k => [...new Set(k.map(m=>nameAny(m.userData.vessel)))].join(', ');
   CT.info.innerHTML += `<div class="lst" style="margin-top:4px">
-    ${a.length?`<span style="border-color:#d6303a;color:#e77">tętnice: ${names(a)}</span>`:''}
-    ${v.length?`<span style="border-color:#3576c4;color:#7ab">żyły: ${names(v)}</span>`:''}</div>`;
+    ${a.length?`<span style="border-color:#d6303a;color:#e77">${L('tętnice')}: ${names(a)}</span>`:''}
+    ${v.length?`<span style="border-color:#3576c4;color:#7ab">${L('żyły')}: ${names(v)}</span>`:''}</div>`;
 }
 
 // ---- NIH (lazy per-narząd) ----------------------------------------------
 async function renderNIH(){
   NIH.meshes.forEach(m=> m.visible = false);
   if (EXTRA_NO_NIH.has(current)){
-    NIH.badge.textContent = 'brak modelu NIH';
-    NIH.info.innerHTML = '<span class="en">Visible Human nie ma wydzielonej podstawy czaszki. Planowane drugie źródło: skan CT.</span>';
+    NIH.badge.textContent = L('brak modelu NIH');
+    NIH.info.innerHTML = '<span class="en">' + L('Visible Human nie ma wydzielonej podstawy czaszki. Planowane drugie źródło: skan CT.') + '</span>';
     return;
   }
   if (!current){
-    NIH.badge.textContent = 'tylko pojedyncze narządy';
-    NIH.info.innerHTML = '<span class="en">Modele NIH nie mają wspólnego układu — wybierz konkretny narząd.</span>';
+    NIH.badge.textContent = L('tylko pojedyncze narządy');
+    NIH.info.innerHTML = '<span class="en">' + L('Modele NIH nie mają wspólnego układu — wybierz konkretny narząd.') + '</span>';
     return;
   }
   const slugs = NIHMAN.byOrgan[current] || [];
   if (!slugs.length){
-    NIH.badge.textContent = 'brak modelu NIH';
-    NIH.info.innerHTML = '<span class="en">Dla tego narządu nie ma modelu w zestawie Visible Human.</span>';
+    NIH.badge.textContent = L('brak modelu NIH');
+    NIH.info.innerHTML = '<span class="en">' + L('Dla tego narządu nie ma modelu w zestawie Visible Human.') + '</span>';
     return;
   }
-  NIH.badge.textContent = 'model poglądowy';
-  NIH.info.innerHTML = '<span class="en">wczytywanie…</span>';
+  NIH.badge.textContent = L('model poglądowy');
+  NIH.info.innerHTML = '<span class="en">' + L('wczytywanie…') + '</span>';
   const shown = [];
   for (const slug of slugs){
     if (!NIH.loaded?.has(slug)){
@@ -999,8 +1040,8 @@ async function renderNIH(){
     NIH.meshes.filter(m=>m.userData.slug===slug).forEach(m=>{ m.visible=true; shown.push(m); });
   }
   NIH.frame(shown);
-  NIH.info.innerHTML = `<div class="pick">${slugs.map(s=>NIHMAN.plBySlug[s]).join(', ')}</div>
-    <span class="en">Pojedyncza bryła z Visible Human — bez szpilek i pod-struktur.</span>`;
+  NIH.info.innerHTML = `<div class="pick">${slugs.map(s=>nameAny(NIHMAN.plBySlug[s])).join(', ')}</div>
+    <span class="en">${L('Pojedyncza bryła z Visible Human — bez szpilek i pod-struktur.')}</span>`;
 }
 
 // ---- wybór narządu -----------------------------------------------------
@@ -1008,7 +1049,7 @@ function showOrgan(organ){
   current = organ; selectedZA = null;
   cutStack.length = 0; updateCutBtns();   // nowy narząd = brak cięć
   clearSel();
-  document.getElementById('sel').textContent = organ || 'cały układ trzewny';
+  document.getElementById('sel').textContent = organ ? L(organ) : L('cały układ trzewny');
   document.querySelectorAll('.organ').forEach(o=>o.classList.toggle('active', o.dataset.o===organ));
   document.getElementById('btn-all').classList.toggle('active', !organ);
   renderZA(); renderCT(); renderNIH(); renderVess();
@@ -1065,7 +1106,7 @@ MPR.draw = async (pl)=>{
 MPR.redrawAll = ()=> ['ax','cor','sag'].forEach(pl=> MPR.draw(pl));
 document.getElementById('mpr-hu').onchange = (e)=>{
   MPR.color = e.target.checked;
-  document.getElementById('mpr-mode').textContent = MPR.color ? 'barwy wg klas tkanek (HU)' : 'okno tkanek miękkich';
+  document.getElementById('mpr-mode').textContent = MPR.color ? L('barwy wg klas tkanek (HU)') : L('okno tkanek miękkich');
   document.getElementById('mpr-leg').style.display = MPR.color ? 'block' : 'none';
   if (MPR.on) MPR.redrawAll();
 };
@@ -1342,8 +1383,8 @@ function buildTree(){
   groups["Narządy zmysłów"] = [["Oko",0],["Ucho",0]];
   groups["Czaszka"] = [["Czaszka — podstawa",0]];
   tree.innerHTML = Object.entries(groups).map(([g,orgs])=>`
-    <div class="grp collapsed"><div class="ghead">${g}<span>${orgs.length}</span></div>
-      ${orgs.map(([o,n])=>`<div class="organ" data-o="${o}">${o}</div>`).join('')}</div>`).join('');
+    <div class="grp collapsed"><div class="ghead">${L(g)}<span>${orgs.length}</span></div>
+      ${orgs.map(([o,n])=>`<div class="organ" data-o="${o}">${L(o)}</div>`).join('')}</div>`).join('');
   tree.querySelectorAll('.ghead').forEach(h=> h.onclick=()=> h.parentElement.classList.toggle('collapsed'));
   tree.querySelectorAll('.organ').forEach(d=> d.onclick=()=> showOrgan(d.dataset.o));
 }
@@ -1382,6 +1423,7 @@ async function loadCTSubject(subj){
 document.getElementById('ct-subj').onchange = e=> loadCTSubject(e.target.value);
 
 async function init(){
+  await loadOcLang();
   MAN = await (await fetch('./visceral_manifest.json'+CB)).json();
   MAN.parts.forEach(p=>{ p.key = sanitize(p.name); ZA_BY.set(p.key,p); if(p.segment) ORG_SEG.add(p.organ); });
   const nm = await (await fetch('./alt/nih/_manifest.json'+CB)).json();
@@ -1397,7 +1439,7 @@ async function init(){
   showOrgan(null);
   document.querySelector('.grp')?.classList.remove('collapsed');
 }
-init().catch(e=>{ const l=document.getElementById('loading'); if(l) l.textContent='błąd: '+e.message; console.error(e); });
+init().catch(e=>{ const l=document.getElementById('loading'); if(l) l.textContent=L('błąd:')+' '+e.message; console.error(e); });
 </script>
 </body>
 </html>
