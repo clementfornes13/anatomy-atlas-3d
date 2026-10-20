@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -412,12 +412,54 @@
   #bookmark-list .bm-item { display: flex; gap: 6px; }
   #bookmark-list .bm-go { flex: 1; }
   #bookmark-list .bm-del { width: auto !important; flex: none; padding: 0 14px; background: rgba(180,87,74,.12); border-color: transparent; }
-  #quiz-box { display: none; margin-top: 12px; flex-direction: column; gap: 10px; }
-  #quiz-question { font-size: 14px; }
-  #quiz-feedback { font-weight: 650; min-height: 18px; }
+  .sheet-hint { margin-top: 8px; font-size: 12px; color: var(--text-dim); line-height: 1.45; }
+  #quiz-stats-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #sheet-body button.link-btn, .link-btn {
+    width: auto; min-height: 0; padding: 2px 4px; background: none; border: none;
+    color: var(--accent-ink); font-size: 12px; font-weight: 600; text-decoration: underline; cursor: pointer;
+  }
+  #quiz-card {
+    position: fixed; z-index: 220; top: calc(128px + var(--sat)); left: calc(12px + var(--sal)); right: calc(12px + var(--sar));
+    padding: 14px 16px 12px; border-radius: var(--r-lg, 16px);
+    background: var(--glass-solid); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    border: 1px solid var(--line); box-shadow: var(--shadow-pop);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  #quiz-card .struct-x { top: 8px; right: 8px; }
+  .quiz-modes { display: flex; gap: 4px; padding: 3px; margin-right: 34px; background: var(--accent-soft); border-radius: 10px; align-self: flex-start; }
+  .quiz-modes button {
+    border: none; background: transparent; padding: 6px 12px; border-radius: 8px;
+    font-size: 12.5px; font-weight: 600; color: var(--accent-ink); cursor: pointer;
+  }
+  .quiz-modes button.active { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  #quiz-question { font-size: 15px; font-weight: 650; line-height: 1.35; }
+  #quiz-choices { display: grid; grid-template-columns: 1fr; gap: 6px; }
+  #quiz-choices:empty { display: none; }
+  #quiz-choices button, .quiz-actions button {
+    min-height: 40px; padding: 8px 12px; border-radius: var(--r-md); border: 1px solid var(--line);
+    background: var(--surface); color: var(--text); font-size: 13.5px; font-weight: 600; text-align: left; cursor: pointer;
+  }
+  #quiz-choices button kbd { font: 600 11px/1 ui-monospace, monospace; opacity: .55; margin-right: 8px; }
+  #quiz-choices button.right { border-color: var(--ok); background: rgba(63,143,107,.14); }
+  #quiz-choices button.wrong { border-color: var(--danger); background: rgba(180,87,74,.12); }
+  #quiz-choices button:disabled { cursor: default; }
+  .quiz-actions { display: flex; gap: 8px; }
+  .quiz-actions button { flex: 1; text-align: center; }
+  #quiz-next { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #quiz-feedback { font-weight: 650; font-size: 13.5px; }
+  #quiz-feedback:empty { display: none; }
   #quiz-feedback.correct { color: var(--ok); }
   #quiz-feedback.wrong { color: var(--danger); }
-  #quiz-score { font-size: 12px; color: var(--text-dim); }
+  #quiz-score { font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  /* telefon: karta quizu na dole (srodek ekranu zostaje dla podswietlonej struktury) */
+  html.touch-layout.quiz-on #hero, html.touch-layout.quiz-on #scene-caption { display: none; }
+  html.touch-layout #quiz-card { top: auto; bottom: calc(var(--dock-h) + var(--sab) + 10px); padding: 10px 12px; gap: 8px; }
+  html.touch-layout #quiz-choices { grid-template-columns: 1fr 1fr; }
+  html.touch-layout #quiz-choices button { min-height: 36px; font-size: 12.5px; padding: 6px 9px; }
+  @media (min-width: 760px) {
+    html:not(.touch-layout) #quiz-card { top: calc(92px + var(--sat)); right: auto; width: 360px; left: calc(18px + var(--sal)); }
+    #quiz-choices { grid-template-columns: 1fr 1fr; }
+  }
   #screenshot-btn, #anki-export-btn, #quiz-toggle { margin-top: 8px; }
 
   /* ---------- karta struktury / lista punktów (dół-lewy na desktopie) ---------- */
@@ -590,7 +632,7 @@
      arkusz -> panel zadokowany z prawej; karty struktur -> lewy dół
      ============================================================ */
   @media (min-width: 900px) {
-    html:not(.touch-layout) #search { left: auto; right: calc(84px + var(--sar)); width: 340px; max-width: 340px; top: calc(16px + var(--sat)); transition: opacity .2s, transform .2s; }
+    html:not(.touch-layout) #search { left: auto; right: calc(124px + var(--sar)); width: 340px; max-width: 340px; top: calc(16px + var(--sat)); transition: opacity .2s, transform .2s; }
     html:not(.touch-layout).sheet-open #search { opacity: 0; pointer-events: none; transform: translateX(20px); }
     html:not(.touch-layout) #home-fab { right: calc(16px + var(--sar)); }
     html:not(.touch-layout) #lang-toggle { right: calc(64px + var(--sar)); }
@@ -640,26 +682,44 @@
     html:not(.touch-layout) #brand { top: calc(16px + var(--sat)); left: calc(18px + var(--sal)); }
   }
 
+  /* błąd ładowania + toast */
+  #loading.error::before { display: none; }
+  #loading.error { flex-direction: column; gap: 10px; text-align: center; color: var(--danger); }
+  #loading.error .loading-detail { font-size: 12px; color: var(--text-dim); max-width: 420px; }
+  #loading.error button {
+    margin-top: 6px; padding: 10px 18px; border-radius: var(--r-md); border: 1px solid var(--accent);
+    background: var(--accent); color: #fff; font-weight: 600; cursor: pointer;
+  }
+  #search-results .res-empty { color: var(--text-faint); font-style: italic; }
+  #toast {
+    position: fixed; z-index: 400; left: 50%; bottom: calc(150px + var(--sab));
+    transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    max-width: min(92vw, 460px); padding: 11px 16px; border-radius: var(--r-md);
+    background: var(--surface); color: var(--text); border: 1px solid var(--line);
+    box-shadow: var(--shadow-pop); font-size: 13.5px; transition: opacity .2s, transform .2s;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition: none !important; animation: none !important; }
   }
 </style>
 </head>
 <body>
-<div id="loading">Ładowanie kości (203 struktury)…</div>
+<div id="loading">Chargement…</div>
 <div id="canvas-wrap"></div>
 <div id="vignette"></div>
 
 <div id="brand">
-  <div class="eyebrow">Atlas anatomiczny</div>
-  <h1>Całe ciało · 3D <span id="brand-ver">v0.1.2</span></h1>
+  <div class="eyebrow">Atlas d'anatomie</div>
+  <h1>Corps entier · 3D <span id="brand-ver">v0.1.2</span></h1>
 </div>
 
-<a id="home-fab" class="fab" href="../../atlas.html" title="Wróć do wyboru trybu" aria-label="Wróć do wyboru trybu">⌂</a>
+<a id="home-fab" class="fab" href="../../atlas.html" title="Retour au choix du mode" aria-label="Retour au choix du mode">⌂</a>
 <button id="lang-toggle" class="fab" title="Langue / Language / Język" aria-label="Langue / Language / Język">FR</button>
 
 <div id="search">
-  <input id="search-input" type="text" placeholder="Szukaj struktury (PL / EN)…" autocomplete="off">
+  <input id="search-input" type="text" placeholder="Rechercher une structure (FR / EN)…" aria-label="Rechercher une structure" autocomplete="off">
   <div id="search-results"></div>
 </div>
 
@@ -677,7 +737,7 @@
   </div>
 </div>
 
-<div id="scene-caption"><span id="scene-caption-text">Dorosły człowiek</span></div>
+<div id="scene-caption"><span id="scene-caption-text">Humain adulte</span></div>
 
 <!-- ===== HERO: suwak "Rozłóż warstwy" zawsze widoczny ===== -->
 <div id="hero">
@@ -794,12 +854,11 @@
         </div>
         <div class="grp">
           <h4>Nauka</h4>
-          <button id="quiz-toggle">🎯 Tryb quizu</button>
-          <div id="quiz-box">
-            <div id="quiz-question"></div>
-            <div id="quiz-feedback"></div>
-            <button id="quiz-next" style="display:none">Następne pytanie →</button>
-            <div id="quiz-score"></div>
+          <button id="quiz-toggle">🎯 Mode quiz</button>
+          <div id="quiz-hint" class="sheet-hint"></div>
+          <div id="quiz-stats-row" class="sheet-hint">
+            <span id="quiz-stats"></span>
+            <button id="quiz-reset-stats" class="link-btn"></button>
           </div>
         </div>
         <div class="grp">
@@ -838,6 +897,23 @@
 </div>
 
 <div id="kolokwium-panel"></div>
+
+<!-- ===== karta quizu (nad scena - na telefonie arkusz zaslanialby model) ===== -->
+<div id="quiz-card" style="display:none" aria-live="polite">
+  <button class="struct-x" id="quiz-x" aria-label="Fermer">✕</button>
+  <div class="quiz-modes" role="tablist">
+    <button data-qmode="find" class="active" role="tab">Localiser</button>
+    <button data-qmode="name" role="tab">Nommer</button>
+  </div>
+  <div id="quiz-question"></div>
+  <div id="quiz-choices"></div>
+  <div id="quiz-feedback"></div>
+  <div class="quiz-actions">
+    <button id="quiz-skip">Passer</button>
+    <button id="quiz-next" style="display:none">Question suivante →</button>
+  </div>
+  <div id="quiz-score"></div>
+</div>
 
 <!-- ===== modal notatki ===== -->
 <div id="notes-modal">
@@ -962,7 +1038,12 @@ const STRINGS = {
         kolokwiumTodoBadge: "(jeszcze nie w atlasie)", kolokwiumNoteBtn: "📝 Notatka",
         bookmarksHeading: "Zakładki", bookmarkPlaceholder: "nazwa widoku…",
         studyHeading: "Nauka", quizToggle: "🎯 Tryb quizu", quizNext: "Następne pytanie →",
-        quizAsk: (name) => "Kliknij: " + name, quizCorrect: "✓ Dobrze!", quizWrong: (name) => "✗ To było: " + name, quizScore: (c, t) => `Wynik: ${c}/${t}`,
+        quizAsk: (name) => "Kliknij: " + name, quizCorrect: "✓ Dobrze!", quizWrong: (name) => "✗ To było: " + name,
+        quizScore: (c, t, s, b) => `Wynik: ${c}/${t} · seria ${s} · rekord ${b}`,
+        quizFind: "Znajdź", quizName: "Nazwij", quizNameAsk: "Co to za podświetlona struktura?", quizSkip: "Pomiń",
+        quizShown: "Szukana struktura jest podświetlona na zielono.", quizEmpty: "Za mało widocznych struktur — włącz warstwy w „Warstwy”.",
+        quizHint: "Pytania dotyczą widocznych warstw. Struktury z błędami wracają częściej.",
+        quizWeak: (n) => n ? `Do powtórki: ${n}` : "Brak struktur do powtórki", quizResetStats: "Wyczyść", quizStatsCleared: "Statystyki quizu wyczyszczone.",
         exportHeading: "Eksport", screenshotBtn: "📷 Zrzut ekranu (bez UI)", ankiExportBtn: "🗂️ Eksport punktów do Anki (CSV)",
         closeAria: "Zamknij", speakTitle: "Odsłuchaj nazwę",
         structureEyebrowDefault: "Struktura", landmarkEyebrow: "Punkt orientacyjny",
@@ -980,6 +1061,9 @@ const STRINGS = {
         approxLandmarkLong: "Punkt przybliżony: dołączony do najbliższej znanej struktury na podstawie sąsiedztwa w słowniku, nie zmierzony geometrycznie.",
         landmarkIdSuffix: " (punkt)", noResults: "Brak wyników", speechLang: "pl-PL", ankiApproxTag: " [przybliżone]",
         noNote: "Brak jeszcze notatki dla tej grupy struktur.", noKolokwiumData: "Brak danych szpilek (szpilki_map.json się nie wczytał).",
+        loadError: "Nie udało się wczytać atlasu.", loadErrorModels: "Brak modeli 3D (bones.glb) — sprawdź połączenie z internetem.", retry: "Spróbuj ponownie",
+        layerLoadFailed: (name) => "Nie udało się wczytać warstwy: " + name, structureUnavailable: "Ta struktura nie jest dostępna (warstwa się nie wczytała).",
+        bookmarkDefault: "Widok", sideLeft: "lewa", sideRight: "prawa",
     },
     en: {
         pageTitle: "Anatomy atlas 3D — whole body", brandEyebrow: "Anatomy atlas", brandTitle: "Whole body · 3D",
@@ -1007,7 +1091,12 @@ const STRINGS = {
         kolokwiumTodoBadge: "(not in the atlas yet)", kolokwiumNoteBtn: "📝 Notes",
         bookmarksHeading: "Bookmarks", bookmarkPlaceholder: "view name…",
         studyHeading: "Study", quizToggle: "🎯 Quiz mode", quizNext: "Next question →",
-        quizAsk: (name) => "Click: " + name, quizCorrect: "✓ Correct!", quizWrong: (name) => "✗ That was: " + name, quizScore: (c, t) => `Score: ${c}/${t}`,
+        quizAsk: (name) => "Click: " + name, quizCorrect: "✓ Correct!", quizWrong: (name) => "✗ That was: " + name,
+        quizScore: (c, t, s, b) => `Score: ${c}/${t} · streak ${s} · best ${b}`,
+        quizFind: "Find", quizName: "Name", quizNameAsk: "What is the highlighted structure?", quizSkip: "Skip",
+        quizShown: "The structure you were looking for is highlighted in green.", quizEmpty: "Not enough visible structures — turn layers on in “Layers”.",
+        quizHint: "Questions use the visible layers. Structures you miss come back more often.",
+        quizWeak: (n) => n ? `To review: ${n}` : "Nothing to review", quizResetStats: "Reset", quizStatsCleared: "Quiz statistics cleared.",
         exportHeading: "Export", screenshotBtn: "📷 Screenshot (no UI)", ankiExportBtn: "🗂️ Export landmarks to Anki (CSV)",
         closeAria: "Close", speakTitle: "Read name aloud",
         structureEyebrowDefault: "Structure", landmarkEyebrow: "Landmark",
@@ -1025,6 +1114,9 @@ const STRINGS = {
         approxLandmarkLong: "Approximate point: attached to the nearest known structure by dictionary proximity, not geometrically measured.",
         landmarkIdSuffix: " (landmark)", noResults: "No results", speechLang: "en-US", ankiApproxTag: " [approximate]",
         noNote: "No notes yet for this group of structures.", noKolokwiumData: "Practical-exam data missing (szpilki_map.json failed to load).",
+        loadError: "The atlas could not be loaded.", loadErrorModels: "3D models missing (bones.glb) — check your internet connection.", retry: "Try again",
+        layerLoadFailed: (name) => "Could not load layer: " + name, structureUnavailable: "This structure is not available (its layer failed to load).",
+        bookmarkDefault: "View", sideLeft: "left", sideRight: "right",
     },
     fr: {
         pageTitle: "Atlas d'anatomie 3D — corps entier", brandEyebrow: "Atlas d'anatomie", brandTitle: "Corps entier · 3D",
@@ -1052,7 +1144,12 @@ const STRINGS = {
         kolokwiumTodoBadge: "(pas encore dans l'atlas)", kolokwiumNoteBtn: "📝 Notes",
         bookmarksHeading: "Favoris", bookmarkPlaceholder: "nom de la vue…",
         studyHeading: "Révision", quizToggle: "🎯 Mode quiz", quizNext: "Question suivante →",
-        quizAsk: (name) => "Cliquez : " + name, quizCorrect: "✓ Correct !", quizWrong: (name) => "✗ C'était : " + name, quizScore: (c, t) => `Score : ${c}/${t}`,
+        quizAsk: (name) => "Cliquez sur : " + name, quizCorrect: "✓ Correct !", quizWrong: (name) => "✗ C'était : " + name,
+        quizScore: (c, t, s, b) => `Score : ${c}/${t} · série ${s} · record ${b}`,
+        quizFind: "Localiser", quizName: "Nommer", quizNameAsk: "Quelle est la structure surlignée ?", quizSkip: "Passer",
+        quizShown: "La structure recherchée est surlignée en vert.", quizEmpty: "Pas assez de structures visibles — activez des couches dans « Couches ».",
+        quizHint: "Les questions portent sur les couches visibles. Les structures ratées reviennent plus souvent.",
+        quizWeak: (n) => n ? `À revoir : ${n}` : "Rien à revoir pour l'instant", quizResetStats: "Réinitialiser", quizStatsCleared: "Statistiques du quiz réinitialisées.",
         exportHeading: "Export", screenshotBtn: "📷 Capture d'écran (sans interface)", ankiExportBtn: "🗂️ Exporter les repères vers Anki (CSV)",
         closeAria: "Fermer", speakTitle: "Écouter le nom",
         structureEyebrowDefault: "Structure", landmarkEyebrow: "Repère anatomique",
@@ -1070,9 +1167,23 @@ const STRINGS = {
         approxLandmarkLong: "Point approximatif : rattaché à la structure connue la plus proche d'après le dictionnaire, non mesuré géométriquement.",
         landmarkIdSuffix: " (repère)", noResults: "Aucun résultat", speechLang: "fr-FR", ankiApproxTag: " [approximatif]",
         noNote: "Pas encore de note pour ce groupe de structures.", noKolokwiumData: "Données d'examen manquantes (szpilki_map.json n'a pas pu être chargé).",
+        loadError: "Impossible de charger l'atlas.", loadErrorModels: "Modèles 3D introuvables (bones.glb) — vérifiez votre connexion internet.", retry: "Réessayer",
+        layerLoadFailed: (name) => "Impossible de charger la couche : " + name, structureUnavailable: "Cette structure n'est pas disponible (sa couche n'a pas pu être chargée).",
+        bookmarkDefault: "Vue", sideLeft: "gauche", sideRight: "droite",
     },
 };
 function t(key) { return STRINGS[LANG][key]; }
+const KIND_LAYER_KEY = { bone: "layerBones", muscle: "layerMuscles", fascia: "layerFascia", vessel: "layerVessels", organ: "layerOrgans", tooth: "layerTeeth", connective: "layerConnective", brain: "layerBrain", nerve: "layerNerves", lymph: "layerLymph" };
+// krotki komunikat u dolu ekranu (bledy ladowania, potwierdzenia)
+let _toastTimer = 0;
+function showToast(msg, ms = 3500) {
+    let el = document.getElementById("toast");
+    if (!el) { el = document.createElement("div"); el.id = "toast"; el.setAttribute("role", "status"); document.body.appendChild(el); }
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => el.classList.remove("show"), ms);
+}
 
 function applyLangUI() {
     document.documentElement.lang = LANG;
@@ -1141,7 +1252,8 @@ function applyLangUI() {
     if (grpH4s[1]) grpH4s[1].textContent = t("studyHeading");
     if (grpH4s[2]) grpH4s[2].textContent = t("exportHeading");
     set("bookmark-name", "placeholder", t("bookmarkPlaceholder"));
-    set("quiz-toggle", "textContent", t("quizToggle")); set("quiz-next", "textContent", t("quizNext"));
+    set("quiz-toggle", "textContent", t("quizToggle"));
+    try { refreshQuizTexts(); } catch (e) {}
     set("screenshot-btn", "textContent", t("screenshotBtn")); set("anki-export-btn", "textContent", t("ankiExportBtn"));
     setAttr("lbl-speak", "title", t("speakTitle"));
     const openBtn = document.getElementById("open-bone-btn"); if (openBtn) openBtn.textContent = t("openBoneBtn");
@@ -1156,13 +1268,13 @@ function applyLangUI() {
     try {
         if (typeof isolatedBoneId !== "undefined" && isolatedBoneId !== null) {
             const b = bones.find(x => x.id === isolatedBoneId);
-            if (b) { set("sb-pl", "textContent", primaryName(b)); set("sb-en", "textContent", secondaryName(b)); }
+            if (b) { set("sb-pl", "textContent", primaryName(b) + sideSuffix(b)); set("sb-en", "textContent", secondaryName(b)); }
         }
     } catch (e) {}
     try {
         if (typeof selectedMesh !== "undefined" && selectedMesh && document.getElementById("label-box").style.display !== "none") {
             const ud = selectedMesh.userData, obj = ud.landmark || ud.bone;
-            if (obj) { set("lbl-pl-text", "textContent", primaryName(obj)); set("lbl-en", "textContent", secondaryName(obj)); currentSpeakName = primaryName(obj); }
+            if (obj) { set("lbl-pl-text", "textContent", primaryName(obj) + (ud.landmark ? "" : sideSuffix(obj))); set("lbl-en", "textContent", secondaryName(obj)); currentSpeakName = primaryName(obj); }
         }
     } catch (e) {}
     try { refreshStructEyebrow("label-box", "lbl-eyebrow"); refreshStructEyebrow("sidebar", "sb-eyebrow"); } catch (e) {}
@@ -1657,6 +1769,7 @@ async function loadMeshesForKind(kind) {
     } catch (e) {
         console.warn("Nie udalo sie wczytac warstwy GLB", kind, glbFile, e);
         bones = bones.filter(b => b.kind !== kind);
+        if (kind !== "bone") showToast(t("layerLoadFailed")(t(KIND_LAYER_KEY[kind] || "layerBones")));
         return;
     }
     const meshById = new Map();
@@ -1775,78 +1888,40 @@ async function loadMeshesForKind(kind) {
 function ensureKindLoaded(kind) {
     if (loadedKinds.has(kind)) return Promise.resolve();
     if (kindLoadPromises.has(kind)) return kindLoadPromises.get(kind);
-    const p = loadMeshesForKind(kind).then(() => { loadedKinds.add(kind); });
+    const p = loadMeshesForKind(kind).then(() => {
+        if (bones.some(b => b.kind === kind)) loadedKinds.add(kind);
+        else kindLoadPromises.delete(kind); // nieudane ladowanie - pozwol sprobowac ponownie
+        if (sectionToggle.checked) updateSectionPlane(); // nowa warstwa tez ma byc przecieta
+        updateBoneGhosting();
+        requestRender();
+    });
     kindLoadPromises.set(kind, p);
     return p;
 }
 
+const CATALOGS = [
+    ["bone", "all_bones_labeled_v2.json"], ["muscle", "all_muscles_labeled_v2.json"],
+    ["fascia", "all_fascia_labeled_v2.json"], ["vessel", "all_vessels_labeled_v2.json"],
+    ["organ", "all_organs_labeled_v2.json"], ["tooth", "all_teeth_labeled_v2.json"],
+    ["connective", "all_connective_labeled_v2.json"], ["brain", "all_brain_labeled_v2.json"],
+    ["nerve", "all_nerves_labeled_v2.json"], ["lymph", "all_lymph_labeled_v2.json"],
+];
 async function init() {
-    const res = await fetch("all_bones_labeled_v2.json" + V2B);
-    const boneList = (await res.json()).map(b => ({ ...b, kind: "bone" }));
-    let muscleList = [];
-    try {
-        const mres = await fetch("all_muscles_labeled_v2.json" + V2B);
-        muscleList = (await mres.json()).map(m => ({ ...m, kind: "muscle" }));
-    } catch (e) {
-        console.warn("Brak all_muscles_labeled.json - pomijam warstwe miesni:", e);
-    }
-    let fasciaList = [];
-    try {
-        const fres = await fetch("all_fascia_labeled_v2.json" + V2B);
-        fasciaList = (await fres.json()).map(f => ({ ...f, kind: "fascia" }));
-    } catch (e) {
-        console.warn("Brak all_fascia_labeled.json - pomijam warstwe powiezi:", e);
-    }
-    let vesselList = [];
-    try {
-        const vres = await fetch("all_vessels_labeled_v2.json" + V2B);
-        vesselList = (await vres.json()).map(v => ({ ...v, kind: "vessel" }));
-    } catch (e) {
-        console.warn("Brak all_vessels_labeled.json - pomijam warstwe naczyn:", e);
-    }
-    let organList = [];
-    try {
-        const ores = await fetch("all_organs_labeled_v2.json" + V2B);
-        organList = (await ores.json()).map(o => ({ ...o, kind: "organ" }));
-    } catch (e) {
-        console.warn("Brak all_organs_labeled.json - pomijam warstwe narzadow:", e);
-    }
-    let toothList = [];
-    try {
-        const tres = await fetch("all_teeth_labeled_v2.json" + V2B);
-        toothList = (await tres.json()).map(t => ({ ...t, kind: "tooth" }));
-    } catch (e) {
-        console.warn("Brak all_teeth_labeled.json - pomijam warstwe zebow:", e);
-    }
-    let connectiveList = [];
-    try {
-        const cres = await fetch("all_connective_labeled_v2.json" + V2B);
-        connectiveList = (await cres.json()).map(c => ({ ...c, kind: "connective" }));
-    } catch (e) {
-        console.warn("Brak all_connective_labeled.json - pomijam warstwe tkanki lacznej:", e);
-    }
-    let brainList = [];
-    try {
-        const bres = await fetch("all_brain_labeled_v2.json" + V2B);
-        brainList = (await bres.json()).map(b => ({ ...b, kind: "brain" }));
-    } catch (e) {
-        console.warn("Brak all_brain_labeled.json - pomijam warstwe mozgu:", e);
-    }
-    let nerveList = [];
-    try {
-        const nres = await fetch("all_nerves_labeled_v2.json" + V2B);
-        nerveList = (await nres.json()).map(n => ({ ...n, kind: "nerve" }));
-    } catch (e) {
-        console.warn("Brak all_nerves_labeled.json - pomijam warstwe nerwow:", e);
-    }
-    let lymphList = [];
-    try {
-        const lres = await fetch("all_lymph_labeled_v2.json" + V2B);
-        lymphList = (await lres.json()).map(l => ({ ...l, kind: "lymph" }));
-    } catch (e) {
-        console.warn("Brak all_lymph_labeled.json - pomijam warstwe ukladu chlonnego:", e);
-    }
-    bones = boneList.concat(muscleList, fasciaList, vesselList, organList, toothList, connectiveList, brainList, nerveList, lymphList);
+    // wszystkie katalogi naraz (wczesniej 10 zapytan jedno po drugim); brak
+    // pojedynczego katalogu (poza koscmi) tylko pomija warstwe
+    const lists = await Promise.all(CATALOGS.map(async ([kind, file]) => {
+        try {
+            const r = await fetch(file + V2B);
+            if (!r.ok) throw new Error(r.status + " " + file);
+            return (await r.json()).map(x => ({ ...x, kind }));
+        } catch (e) {
+            if (kind === "bone") throw e;
+            console.warn("Brak katalogu " + file + " - pomijam warstwe:", e);
+            return [];
+        }
+    }));
+    bones = lists.flat();
+    buildSearchIndex();
     for (const b of bones) boneIdToKind.set(b.id, b.kind);
 
     const box = new THREE.Box3();
@@ -1855,6 +1930,7 @@ async function init() {
     // widoczna/zaznaczona) - patrz ensureKindLoaded/loadMeshesForKind wyzej.
     // Pozostale warstwy doladowuja sie na zadanie (checkbox/wyszukiwanie/zakladka).
     await ensureKindLoaded("bone");
+    if (!loadedKinds.has("bone") || !boneObjById.size) throw new Error(t("loadErrorModels"));
     for (const b of bones) {
         if (b.kind === "bone") {
             const obj = boneObjById.get(b.id);
@@ -1883,6 +1959,7 @@ async function init() {
         const GENERIC_TOUCH_RE = /\(z:\s/i;
 
         allLandmarks = rawLandmarks.filter(lm => !GENERIC_TOUCH_RE.test(lm.pl));
+        buildSearchIndex();
         const FORAMEN_RE = /^Otwór|^Kanał/;
         for (const lm of allLandmarks) {
             const isForamen = FORAMEN_RE.test(lm.pl);
@@ -1955,9 +2032,25 @@ async function init() {
 
     everFittedProperly = fitCameraToSkeleton();
     document.getElementById("loading").style.display = "none";
+    requestRender();
 }
 
-init();
+function showLoadError(e) {
+    console.error(e);
+    const el = document.getElementById("loading");
+    el.classList.add("error");
+    el.textContent = "";
+    const msg = document.createElement("div");
+    msg.textContent = t("loadError");
+    const det = document.createElement("div");
+    det.className = "loading-detail";
+    det.textContent = (e && e.message) || String(e);
+    const retry = document.createElement("button");
+    retry.textContent = t("retry");
+    retry.onclick = () => location.reload();
+    el.append(msg, det, retry);
+}
+init().catch(showLoadError);
 
 // Dopasowanie kamery WLASCIWA trygonometria (nie mnoznik na oko) - caly
 // szkielet jest dużo "wyzszy" (os Z) niz "szerszy" (os Y widziana z boku
@@ -1993,6 +2086,7 @@ async function openBone(boneId) {
         await ensureKindLoaded(bone.kind);
         if (statusEl) statusEl.textContent = "";
     }
+    if (!bone || !boneObjById.get(boneId)) { showToast(t("structureUnavailable")); return; }
     isolatedBoneId = boneId;
     try { _explode.reapply(); } catch (e) {}  // guard w apply() wymusi 0 przy izolacji
 
@@ -2021,7 +2115,7 @@ async function openBone(boneId) {
 
     const boneLandmarks = allLandmarks.filter(lm => lm.boneId === boneId);
     try { setStructMeta("sidebar", "sb-eyebrow", bone.kind, false); } catch (e) {}
-    document.getElementById("sb-pl").textContent = primaryName(bone);
+    document.getElementById("sb-pl").textContent = primaryName(bone) + sideSuffix(bone);
     document.getElementById("sb-en").textContent = secondaryName(bone);
     document.getElementById("sb-id").textContent = "ID: " + bone.id;
     showNotesButton(document.getElementById("sb-notes-link"), MESH_NOTE_INDEX.get(bone.id), bone);
@@ -2121,40 +2215,82 @@ async function goToSearchResult(result) {
 const searchInput = document.getElementById("search-input");
 const searchResultsEl = document.getElementById("search-results");
 
+// "Artère" == "artere" == "ARTÈRE"; ł/ø nie rozkladaja sie przez NFD, wiec recznie
+const normText = (x) => (x || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ł/g, "l").replace(/ø/g, "o");
+let SEARCH_INDEX = [];
+function searchKeys(x) { return normText([x.pl, x.en, FR_NAMES[x.en] || ""].join(" | ")); }
+function buildSearchIndex() {
+    SEARCH_INDEX = bones.map(b => ({ item: b, isLandmark: false, keys: searchKeys(b) }))
+        .concat(allLandmarks.map(lm => ({ item: lm, isLandmark: true, keys: searchKeys(lm) })));
+}
+function sideSuffix(x) {
+    return x && x.side === "l" ? " (" + t("sideLeft") + ")" : x && x.side === "r" ? " (" + t("sideRight") + ")" : "";
+}
+let searchSel = -1;
 function runSearch(query) {
-    const q = query.trim().toLowerCase();
+    const q = normText(query.trim());
+    searchSel = -1;
     if (q.length < 2) { searchResultsEl.style.display = "none"; return; }
-
+    const words = q.split(/\s+/);
     const results = [];
-    for (const b of bones) {
-        if (b.pl.toLowerCase().includes(q) || b.en.toLowerCase().includes(q) || (FR_NAMES[b.en] || "").toLowerCase().includes(q)) {
-            results.push({ kind: b.kind, isLandmark: false, boneId: b.id, pl: b.pl, en: b.en });
-        }
+    for (const e of SEARCH_INDEX) {
+        if (!words.every(w => e.keys.includes(w))) continue;
+        if (!e.isLandmark && !bones.includes(e.item)) continue; // warstwa, ktorej nie udalo sie wczytac
+        const x = e.item;
+        const name = normText(primaryName(x));
+        // trafienie od poczatku nazwy w biezacym jezyku > od poczatku slowa > gdziekolwiek
+        const rank = name.startsWith(q) ? 0 : (" " + name).includes(" " + words[0]) ? 1 : 2;
+        results.push(e.isLandmark
+            ? { kind: "landmark", isLandmark: true, boneId: x.boneId, pl: x.pl, en: x.en, landmark: x, rank }
+            : { kind: x.kind, isLandmark: false, boneId: x.id, pl: x.pl, en: x.en, side: x.side, rank });
     }
-    for (const lm of allLandmarks) {
-        if (lm.pl.toLowerCase().includes(q) || lm.en.toLowerCase().includes(q) || (FR_NAMES[lm.en] || "").toLowerCase().includes(q)) {
-            results.push({ kind: "landmark", isLandmark: true, boneId: lm.boneId, pl: lm.pl, en: lm.en, landmark: lm });
-        }
-    }
-    results.sort((a, b) => primaryName(a).length - primaryName(b).length); // krotsze/celniejsze trafienia pierwsze
-    const top = results.slice(0, 25);
+    results.sort((a, b) => a.rank - b.rank || primaryName(a).length - primaryName(b).length);
+    const top = results.slice(0, 30);
 
     searchResultsEl.innerHTML = "";
     if (!top.length) {
-        searchResultsEl.innerHTML = `<div class="res-item" style="color:#888;font-style:italic">${t("noResults")}</div>`;
+        searchResultsEl.innerHTML = `<div class="res-item res-empty">${t("noResults")}</div>`;
     } else {
         for (const r of top) {
             const div = document.createElement("div");
             div.className = "res-item";
+            div.setAttribute("role", "option");
             const approxBadge = r.landmark && r.landmark.approx ? ` <span style="color:#e0c040" title="${t("approxLandmarkTitle")}">⚠</span>` : '';
             const kLabel = r.isLandmark ? t("landmarkKindPoint") : kindShortLabel(r.kind);
-            div.innerHTML = `<span class="res-kind">${kLabel}</span>${primaryName(r)}${approxBadge}<div class="res-en">${secondaryName(r)}</div>`;
+            const kind = document.createElement("span"); kind.className = "res-kind"; kind.textContent = kLabel;
+            const sec = document.createElement("div"); sec.className = "res-en"; sec.textContent = secondaryName(r);
+            div.append(kind, document.createTextNode(primaryName(r) + sideSuffix(r)));
+            if (approxBadge) div.insertAdjacentHTML("beforeend", approxBadge);
+            div.append(sec);
             div.onclick = () => goToSearchResult(r);
             searchResultsEl.appendChild(div);
         }
     }
     searchResultsEl.style.display = "block";
 }
+// strzalki + Enter w liscie wynikow, "/" otwiera wyszukiwarke z dowolnego miejsca
+searchInput.addEventListener("keydown", (e) => {
+    const items = [...searchResultsEl.querySelectorAll(".res-item:not(.res-empty)")];
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        if (!items.length) return;
+        e.preventDefault();
+        searchSel = (searchSel + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+        items.forEach((el, i) => el.classList.toggle("sel", i === searchSel));
+        items[searchSel].scrollIntoView({ block: "nearest" });
+    } else if (e.key === "Enter") {
+        const el = items[searchSel >= 0 ? searchSel : 0];
+        if (el) { e.preventDefault(); el.click(); searchInput.blur(); }
+    } else if (e.key === "Escape") {
+        searchResultsEl.style.display = "none"; searchInput.blur();
+    }
+});
+window.addEventListener("keydown", (e) => {
+    if (e.key !== "/" || e.ctrlKey || e.metaKey) return;
+    const tag = (document.activeElement && document.activeElement.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    e.preventDefault();
+    searchInput.focus();
+});
 
 searchInput.addEventListener("input", () => runSearch(searchInput.value));
 searchInput.addEventListener("focus", () => { if (searchInput.value.trim().length >= 2) runSearch(searchInput.value); });
@@ -2419,7 +2555,7 @@ const BOOKMARKS_KEY = "atlas3d_bookmarks_v1";
 function loadBookmarks() {
     try { return JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || "[]"); } catch { return []; }
 }
-function saveBookmarks(list) { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(list)); }
+function saveBookmarks(list) { try { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(list)); } catch (e) {} }
 
 function renderBookmarkList() {
     const listEl = document.getElementById("bookmark-list");
@@ -2455,7 +2591,7 @@ async function goToBookmark(bm) {
 
 document.getElementById("bookmark-save").addEventListener("click", () => {
     const nameInput = document.getElementById("bookmark-name");
-    const name = nameInput.value.trim() || ("Widok " + (loadBookmarks().length + 1));
+    const name = nameInput.value.trim() || (t("bookmarkDefault") + " " + (loadBookmarks().length + 1));
     const items = loadBookmarks();
     items.push({
         name,
@@ -2473,13 +2609,10 @@ renderBookmarkList();
 // klatke, zapisz canvas jako PNG, przywroc UI. Renderer musi miec
 // preserveDrawingBuffer, inaczej toDataURL zwraca pusty obrazek (bufor
 // czyszczony zaraz po zlozeniu klatki). =====
-const UI_PANEL_IDS = ["left-panel", "topbar", "transparency-box", "tools-box", "label-box", "sidebar"];
+// (panele HTML i tak nie trafiaja do canvasa - wystarczy wyrenderowac klatke)
 document.getElementById("screenshot-btn").addEventListener("click", () => {
-    const prevDisplay = UI_PANEL_IDS.map(id => document.getElementById(id).style.display);
-    UI_PANEL_IDS.forEach(id => { document.getElementById(id).style.display = "none"; });
     renderer.render(scene, camera);
     const dataUrl = renderer.domElement.toDataURL("image/png");
-    UI_PANEL_IDS.forEach((id, i) => { document.getElementById(id).style.display = prevDisplay[i]; });
 
     const a = document.createElement("a");
     a.href = dataUrl;
@@ -2523,53 +2656,226 @@ document.getElementById("anki-export-btn").addEventListener("click", () => {
     URL.revokeObjectURL(url);
 });
 
-// ===== Tryb quizu - "zgadnij kosc": pokazuje nazwe PL losowej (widocznej)
-// kosci, uzytkownik klika na modelu, sprawdzamy trafienie. Dziala tylko na
-// pelnym ukladzie (nie w izolacji), bo tam "zgadywanie" nie ma sensu (widac
-// tylko 1 kosc). =====
+// ===== Quiz - dwa tryby:
+//  - "Localiser": podajemy nazwe, uzytkownik klika strukture na modelu;
+//  - "Nommer": struktura jest podswietlona na modelu, wybor 1 z 4 nazw.
+// Pytania tylko z WIDOCZNYCH, wczytanych struktur (warstwy + skalpel) - wczesniej
+// losowanie z calego katalogu pytalo o niewczytane/niewidoczne warstwy.
+// Statystyki pomylek w localStorage: struktury z bledami wracaja czesciej. =====
+const QUIZ_STATS_KEY = "atlas_quiz_stats_v1";
+const QUIZ_BEST_KEY = "atlas_quiz_best_v1";
+const QUIZ_COLOR = 0x35c27a;
 let quizMode = false;
+let quizKind = "find";
 let quizTarget = null;
-let quizScore = { correct: 0, total: 0 };
+let quizAnswered = false;
+let quizRecent = [];
+let quizScore = { correct: 0, total: 0, streak: 0 };
+let quizBest = 0;
+let quizStats = {};
+try { quizStats = JSON.parse(localStorage.getItem(QUIZ_STATS_KEY) || "{}") || {}; quizBest = +localStorage.getItem(QUIZ_BEST_KEY) || 0; } catch (e) {}
+function saveQuizStats() { try { localStorage.setItem(QUIZ_STATS_KEY, JSON.stringify(quizStats)); localStorage.setItem(QUIZ_BEST_KEY, String(quizBest)); } catch (e) {} }
+const quizKey = (b) => b.en || b.pl;   // stabilne niezaleznie od jezyka; L/P ta sama nazwa = to samo pytanie
+const quizWeak = (k) => { const st = quizStats[k]; return st && st.ko > 0 && st.ko >= st.ok; };
+function quizWeakCount() { return Object.keys(quizStats).filter(quizWeak).length; }
 
-function pickQuizQuestion() {
-    quizTarget = bones[Math.floor(Math.random() * bones.length)];
-    document.getElementById("quiz-question").textContent = t("quizAsk")(primaryName(quizTarget));
-    document.getElementById("quiz-feedback").textContent = "";
-    document.getElementById("quiz-feedback").className = "";
-    document.getElementById("quiz-next").style.display = "none";
-    document.getElementById("quiz-score").textContent = t("quizScore")(quizScore.correct, quizScore.total);
+function quizPool() {
+    const byKey = new Map();
+    for (const b of bones) {
+        const o = boneObjById.get(b.id);
+        if (!o || !o.visible || !primaryName(b)) continue;
+        if (!byKey.has(quizKey(b))) byKey.set(quizKey(b), b);
+    }
+    return [...byKey.values()];
 }
-
-document.getElementById("quiz-toggle").addEventListener("click", () => {
-    quizMode = !quizMode;
-    document.getElementById("quiz-toggle").classList.toggle("active", quizMode);
-    document.getElementById("quiz-box").style.display = quizMode ? "flex" : "none";
-    if (quizMode) {
+function quizPickTarget(pool) {
+    const fresh = pool.filter(b => !quizRecent.includes(quizKey(b)));
+    const cand = fresh.length ? fresh : pool;
+    let total = 0;
+    const w = cand.map(b => {
+        const st = quizStats[quizKey(b)];
+        const v = !st ? 1.3 : 1 + 4 * (st.ko / (st.ok + st.ko));   // nowe troche czesciej, pomylone duzo czesciej
+        total += v; return v;
+    });
+    let r = Math.random() * total;
+    for (let i = 0; i < cand.length; i++) { r -= w[i]; if (r <= 0) return cand[i]; }
+    return cand[cand.length - 1];
+}
+function quizSetHighlight(b, on) {
+    const obj = b && boneObjById.get(b.id);
+    if (!obj) return;
+    obj.traverse(c => { if (c.isMesh) c.material.color.setHex(on ? QUIZ_COLOR : baseColorFor(b)); });
+    if (on) dimOthersExcept(b.id); else undimAll();
+    requestRender();
+}
+function quizFocus(b) {
+    const obj = b && boneObjById.get(b.id);
+    if (!obj) return;
+    const c = new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());
+    const off = camera.position.clone().sub(controls.target);
+    controls.target.copy(c);
+    camera.position.copy(c).add(off);
+    controls.update();
+}
+function quizClearTarget() {
+    if (quizTarget) quizSetHighlight(quizTarget, false);
+}
+function renderQuizScore() {
+    document.getElementById("quiz-score").textContent = t("quizScore")(quizScore.correct, quizScore.total, quizScore.streak, quizBest);
+}
+function renderQuizSheetInfo() {
+    const n = quizWeakCount();
+    const st = document.getElementById("quiz-stats");
+    if (st) st.textContent = t("quizWeak")(n);
+    const rb = document.getElementById("quiz-reset-stats");
+    if (rb) { rb.textContent = t("quizResetStats"); rb.style.display = n ? "" : "none"; }
+    const h = document.getElementById("quiz-hint");
+    if (h) h.textContent = t("quizHint");
+}
+function quizQuestionText() {
+    if (!quizTarget) return t("quizEmpty");
+    return quizKind === "find" ? t("quizAsk")(primaryName(quizTarget)) : t("quizNameAsk");
+}
+function pickQuizQuestion() {
+    quizClearTarget();
+    resetSelection();
+    quizAnswered = false;
+    const pool = quizPool();
+    const fb = document.getElementById("quiz-feedback");
+    fb.textContent = ""; fb.className = "";
+    document.getElementById("quiz-next").style.display = "none";
+    document.getElementById("quiz-skip").style.display = "";
+    const choicesEl = document.getElementById("quiz-choices");
+    choicesEl.innerHTML = "";
+    if (pool.length < (quizKind === "name" ? 4 : 1)) {
+        quizTarget = null;
+        document.getElementById("quiz-question").textContent = t("quizEmpty");
+        renderQuizScore();
+        return;
+    }
+    quizTarget = quizPickTarget(pool);
+    quizRecent.push(quizKey(quizTarget)); if (quizRecent.length > 8) quizRecent.shift();
+    document.getElementById("quiz-question").textContent = quizQuestionText();
+    if (quizKind === "name") {
+        quizSetHighlight(quizTarget, true);
+        quizFocus(quizTarget);
+        // dystraktory: najpierw ten sam rodzaj (kosc/miesien...), zeby pytanie nie bylo trywialne
+        const others = pool.filter(b => quizKey(b) !== quizKey(quizTarget) && primaryName(b) !== primaryName(quizTarget));
+        const same = others.filter(b => b.kind === quizTarget.kind).sort(() => Math.random() - 0.5);
+        const rest = others.filter(b => b.kind !== quizTarget.kind).sort(() => Math.random() - 0.5);
+        const opts = [quizTarget, ...same.concat(rest).slice(0, 3)].sort(() => Math.random() - 0.5);
+        opts.forEach((b, i) => {
+            const btn = document.createElement("button");
+            btn.innerHTML = "<kbd>" + (i + 1) + "</kbd>";
+            btn.appendChild(document.createTextNode(primaryName(b)));
+            btn.dataset.key = quizKey(b);
+            btn.onclick = () => submitQuizChoice(b, btn);
+            choicesEl.appendChild(btn);
+        });
+    }
+    renderQuizScore();
+}
+function quizRecord(ok) {
+    const k = quizKey(quizTarget);
+    const st = quizStats[k] || (quizStats[k] = { ok: 0, ko: 0 });
+    if (ok) st.ok++; else st.ko++;
+    quizScore.total++;
+    if (ok) { quizScore.correct++; quizScore.streak++; quizBest = Math.max(quizBest, quizScore.streak); }
+    else quizScore.streak = 0;
+    saveQuizStats();
+    quizAnswered = true;
+    document.getElementById("quiz-skip").style.display = "none";
+    document.getElementById("quiz-next").style.display = "";
+    renderQuizScore();
+    renderQuizSheetInfo();
+}
+function submitQuizAnswer(hitBone) {
+    if (!quizTarget || quizAnswered) return;
+    // Porownanie po NAZWIE: struktury parzyste (L/P) maja ta sama nazwe i nie sa
+    // rozroznialne po tresci pytania - trafienie w ktorakolwiek sie liczy.
+    const ok = primaryName(hitBone) === primaryName(quizTarget);
+    const fb = document.getElementById("quiz-feedback");
+    if (ok) { fb.textContent = t("quizCorrect"); fb.className = "correct"; }
+    else {
+        fb.textContent = t("quizWrong")(primaryName(hitBone)) + " " + t("quizShown");
+        fb.className = "wrong";
+        quizSetHighlight(quizTarget, true);   // pokaz, gdzie byla szukana struktura
+    }
+    quizRecord(ok);
+}
+function submitQuizChoice(b, btn) {
+    if (!quizTarget || quizAnswered) return;
+    const ok = quizKey(b) === quizKey(quizTarget) || primaryName(b) === primaryName(quizTarget);
+    document.querySelectorAll("#quiz-choices button").forEach(x => {
+        x.disabled = true;
+        if (x.dataset.key === quizKey(quizTarget)) x.classList.add("right");
+    });
+    if (!ok) btn.classList.add("wrong");
+    const fb = document.getElementById("quiz-feedback");
+    fb.textContent = ok ? t("quizCorrect") : t("quizWrong")(primaryName(quizTarget));
+    fb.className = ok ? "correct" : "wrong";
+    quizRecord(ok);
+}
+function setQuizKind(kind) {
+    quizKind = kind;
+    document.querySelectorAll(".quiz-modes button").forEach(b => b.classList.toggle("active", b.dataset.qmode === kind));
+    pickQuizQuestion();
+}
+function setQuizOpen(on) {
+    quizMode = on;
+    document.getElementById("quiz-toggle").classList.toggle("active", on);
+    document.getElementById("quiz-card").style.display = on ? "flex" : "none";
+    document.documentElement.classList.toggle("quiz-on", on);
+    if (on) {
         if (isolatedBoneId !== null) closeBone();
-        quizScore = { correct: 0, total: 0 };
+        if (measureMode) measureToggleBtn.click();
+        if (scalpelMode) scalpelToggleBtn.click();
+        quizScore = { correct: 0, total: 0, streak: 0 };
+        quizRecent = [];
+        document.getElementById("sheet-x").click();   // zamknij arkusz - karta quizu jest nad scena
         pickQuizQuestion();
+    } else {
+        quizClearTarget();
+        quizTarget = null;
+    }
+}
+function refreshQuizTexts() {
+    const m = document.querySelectorAll(".quiz-modes button");
+    if (m[0]) m[0].textContent = t("quizFind");
+    if (m[1]) m[1].textContent = t("quizName");
+    document.getElementById("quiz-skip").textContent = t("quizSkip");
+    document.getElementById("quiz-next").textContent = t("quizNext");
+    document.getElementById("quiz-x").setAttribute("aria-label", t("closeAria"));
+    renderQuizSheetInfo();
+    if (quizMode) {
+        document.getElementById("quiz-question").textContent = quizQuestionText();
+        document.querySelectorAll("#quiz-choices button").forEach(btn => {
+            const b = bones.find(x => quizKey(x) === btn.dataset.key);
+            if (b) btn.lastChild.textContent = primaryName(b);
+        });
+        renderQuizScore();
+    }
+}
+document.getElementById("quiz-toggle").addEventListener("click", () => setQuizOpen(!quizMode));
+document.getElementById("quiz-x").addEventListener("click", () => setQuizOpen(false));
+document.getElementById("quiz-next").addEventListener("click", pickQuizQuestion);
+document.getElementById("quiz-skip").addEventListener("click", pickQuizQuestion);
+document.querySelectorAll(".quiz-modes button").forEach(b => b.addEventListener("click", () => setQuizKind(b.dataset.qmode)));
+document.getElementById("quiz-reset-stats").addEventListener("click", () => {
+    quizStats = {}; saveQuizStats(); renderQuizSheetInfo(); showToast(t("quizStatsCleared"));
+});
+// klawiatura: 1-4 = odpowiedz (tryb "Nommer"), Entree = nastepne pytanie
+window.addEventListener("keydown", (e) => {
+    if (!quizMode) return;
+    const tag = (document.activeElement && document.activeElement.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    if (/^[1-4]$/.test(e.key) && quizKind === "name" && !quizAnswered) {
+        const btn = document.querySelectorAll("#quiz-choices button")[+e.key - 1];
+        if (btn) btn.click();
+    } else if (e.key === "Enter" && quizAnswered) {
+        e.preventDefault(); pickQuizQuestion();
     }
 });
-document.getElementById("quiz-next").addEventListener("click", pickQuizQuestion);
-
-function submitQuizAnswer(hitBone) {
-    // Porownanie po NAZWIE, nie po ID: kosci symetryczne (np. "Strzałka" - lewa
-    // i prawa) maja identyczna nazwe PL w danych i nie sa dla uzytkownika
-    // rozroznialne po opisie pytania - trafienie w ktorakolwiek z par liczy
-    // sie jako poprawna odpowiedz.
-    quizScore.total++;
-    const feedbackEl = document.getElementById("quiz-feedback");
-    if (primaryName(hitBone) === primaryName(quizTarget)) {
-        quizScore.correct++;
-        feedbackEl.textContent = t("quizCorrect");
-        feedbackEl.className = "correct";
-    } else {
-        feedbackEl.textContent = t("quizWrong")(primaryName(hitBone));
-        feedbackEl.className = "wrong";
-    }
-    document.getElementById("quiz-score").textContent = t("quizScore")(quizScore.correct, quizScore.total);
-    document.getElementById("quiz-next").style.display = "block";
-}
 
 // ===== Split-screen (tryb porownawczy) - druga niezalezna kamera + OrbitControls
 // na TEJ SAMEJ scenie (nie duplikujemy modelu), zeby porownac np. przod/tyl
@@ -2641,7 +2947,8 @@ function resetSelection() {
     undimAll();
     if (!selectedMesh) return;
     const wasLandmark = !!selectedMesh.userData.landmark;
-    selectedMesh.material.color.setHex(wasLandmark ? LANDMARK_COLOR : baseColorFor(selectedMesh.userData.bone));
+    const lmSel = selectedMesh.userData.landmark;
+    selectedMesh.material.color.setHex(wasLandmark ? (lmSel.approx ? LANDMARK_APPROX_COLOR : LANDMARK_COLOR) : baseColorFor(selectedMesh.userData.bone));
     selectedMesh = null;
 }
 
@@ -2874,11 +3181,8 @@ renderer.domElement.addEventListener("click", (event) => {
         return;
     }
 
-    if (quizMode) {
-        if (boneHits.length > 0) {
-            const bone = boneHits[0].object.userData.bone;
-            submitQuizAnswer(bone);
-        }
+    if (quizMode && quizTarget) {
+        if (quizKind === "find" && !quizAnswered && boneHits.length > 0) submitQuizAnswer(boneHits[0].object.userData.bone);
         return;
     }
 
@@ -2905,7 +3209,7 @@ renderer.domElement.addEventListener("click", (event) => {
         mesh.material.color.setHex(HIGHLIGHT_COLOR);
         selectedMesh = mesh;
         const bone = mesh.userData.bone;
-        document.getElementById("lbl-pl-text").textContent = primaryName(bone);
+        document.getElementById("lbl-pl-text").textContent = primaryName(bone) + sideSuffix(bone);
         document.getElementById("lbl-en").textContent = secondaryName(bone);
         document.getElementById("lbl-id").textContent = "ID: " + bone.id;
         currentSpeakName = primaryName(bone);
@@ -3099,7 +3403,7 @@ const KOLOKWIUM_META = {
     III: { title: "Kolokwium III — głowa i szyja",                               layers: ["bone", "muscle", "nerve", "vessel", "organ", "connective", "tooth"] },
     IV:  { title: "Kolokwium IV — mózg",                                         layers: ["brain", "vessel", "nerve", "organ", "connective"] },
 };
-const ALL_LAYER_KINDS = ["bone", "muscle", "vessel", "organ", "tooth", "connective", "brain", "nerve", "lymph"];
+const ALL_LAYER_KINDS = ["bone", "muscle", "fascia", "vessel", "organ", "tooth", "connective", "brain", "nerve", "lymph"];
 const LAYER_CHECKBOX_ID = { bone: "layer-bones", muscle: "layer-muscles", fascia: "layer-fascia", vessel: "layer-vessels", organ: "layer-organs", tooth: "layer-teeth", connective: "layer-connective", brain: "layer-brain", nerve: "layer-nerves", lymph: "layer-lymph" };
 
 // FR: tłumaczenia list szpilek, kategorii i notatek (kolokwia_fr_v2.json),
@@ -3507,12 +3811,25 @@ function lmFlyTo(mesh) {
     controls.update();
 }
 
+// Render na zadanie: scena jest statyczna, dopoki uzytkownik nic nie robi -
+// renderowanie 60 kl/s bez przerwy grzalo GPU i zjadalo baterie (telefon/laptop).
+// Rysujemy, gdy kamera sie rusza (takze wygaszanie dampingu) i przez chwile po
+// kazdej interakcji (klik/klawisz/suwak zmieniaja widocznosc, kolory, przekroj).
+let _renderUntil = 0;
+function requestRender(ms = 400) { _renderUntil = Math.max(_renderUntil, performance.now() + ms); }
+["pointerdown", "pointermove", "pointerup", "wheel", "keydown", "input", "change", "click", "touchmove"].forEach(ev =>
+    window.addEventListener(ev, () => requestRender(ev === "pointermove" ? 150 : 600), { passive: true, capture: true }));
+window.addEventListener("resize", () => requestRender(600));
+controls.addEventListener("change", () => requestRender(200));
+controlsB.addEventListener("change", () => requestRender(200));
+
 function animate() {
     requestAnimationFrame(animate);
-    controls.update();
+    const moved = controls.update();
+    const movedB = splitMode ? controlsB.update() : false;
+    if (!moved && !movedB && performance.now() > _renderUntil && !showIdLabels) return;
     updateIdLabels();
     if (splitMode) {
-        controlsB.update();
         const w = window.innerWidth, h = window.innerHeight, halfW = w / 2;
         renderer.setScissorTest(true);
 
@@ -3707,7 +4024,7 @@ window.__dbgRender = {
         applyLangUI();
     });
     applyLangUI();
-    frNamesReady.then(() => { if (LANG === "fr") applyLangUI(); });
+    frNamesReady.then(() => { if (bones.length) buildSearchIndex(); if (LANG === "fr") applyLangUI(); });
 })();
 
 animate();
