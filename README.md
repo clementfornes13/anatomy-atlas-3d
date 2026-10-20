@@ -71,6 +71,10 @@ see `.gitignore`. The extraction pipeline and packaging scripts fetch or regener
 
 ## Run it locally
 
+three.js is not in git (`_atlas_v2/build_full/vendor/` is ignored). On Windows, install it once with
+`powershell -ExecutionPolicy Bypass -File .\setup-local.ps1` (or copy `three@0.160.0` `build/three.module.js` and
+`examples/jsm/` into `vendor/` and `vendor/addons/`). Missing `.glb` models are then loaded from the public R2 bucket.
+
 Any static file server works (the viewer needs `http://`, not `file://`):
 
 ```bash

@@ -341,9 +341,15 @@ const IS_TOUCH_LAYOUT = (window.__detectTouchLayout && window.__detectTouchLayou
 // Zamiast przepisywać ~15 miejsc wywołań — jednorazowy remap w fetch/GLTFLoader.
 const R2_ORGAN_BASE = "https://pub-75514e92552347ccbcdab6bfacd153fd.r2.dev/atlas/narzady/";
 const _ocAssetsParam = new URLSearchParams(location.search).get("assets"); // ?assets=r2|local
-const _ocLocal = _ocAssetsParam ? _ocAssetsParam === "local"
+let _ocLocal = _ocAssetsParam ? _ocAssetsParam === "local"
     : (/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
        || location.protocol === "file:" || !!window.__TAURI__ || !!window.Capacitor);
+// Kopia z gita (bez GLB/alt, sa w .gitignore) uruchomiona lokalnie: brak
+// ./visceral.glb -> pobieraj binaria z R2 jak wersja online.
+if (_ocLocal && !_ocAssetsParam && location.protocol.startsWith("http") && !window.__TAURI__ && !window.Capacitor) {
+  try { if (!(await fetch("./visceral.glb", { method: "HEAD" })).ok) _ocLocal = false; }
+  catch (e) { _ocLocal = false; }
+}
 if (!_ocLocal) {
   // Na R2 lecą TYLKO duże binaria: ./visceral.glb i cały ./alt/ (GLB + slajdy CT).
   // Małe manifesty top-level (./visceral_manifest.json) zostają na Netlify.

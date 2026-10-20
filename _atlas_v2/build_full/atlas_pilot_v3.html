@@ -876,7 +876,14 @@ const _assetsParam = new URLSearchParams(location.search).get("assets"); // ?ass
 const _isLocal = _assetsParam ? _assetsParam === "local"
     : (/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
        || location.protocol === "file:" || !!window.__TAURI__ || !!window.Capacitor);
-const GLB_BASE = _isLocal ? "../dist/" : R2_ATLAS_BASE;
+let GLB_BASE = _isLocal ? "../dist/" : R2_ATLAS_BASE;
+// Kopia z gita (bez GLB, sa w .gitignore) uruchomiona lokalnie: brak ../dist/*.glb
+// -> laduj z R2 zamiast konczyc bledem. Aplikacje offline (Tauri/Capacitor) i
+// jawne ?assets=local zostaja przy plikach lokalnych.
+if (_isLocal && !_assetsParam && location.protocol.startsWith("http") && !window.__TAURI__ && !window.Capacitor) {
+    try { if (!(await fetch("../dist/bones.glb", { method: "HEAD" })).ok) GLB_BASE = R2_ATLAS_BASE; }
+    catch (e) { GLB_BASE = R2_ATLAS_BASE; }
+}
 const KIND_TO_GLB = {
     bone: "bones.glb", muscle: "muscles.glb", fascia: "fascia.glb", vessel: "vessels.glb",
     organ: "organs.glb", tooth: "teeth.glb", connective: "connective.glb",
