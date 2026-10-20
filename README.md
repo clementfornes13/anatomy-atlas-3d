@@ -31,7 +31,8 @@ carry the whole model inside — no download, no account, works on a plane.
 | **Cross-section** | clipping plane on any axis |
 | **Landmarks / "szpilki"** | ~490 exam pin-points mapped to the geometry, grouped by practical (Kolokwium I–IV) |
 | **Lecture notes** | per-structure theory notes (attachments, innervation, clinical relevance) |
-| **Study tools** | quiz mode, distance measure, scalpel (hide structures), split-screen compare, bookmarks, Anki CSV export |
+| **Study tools** | quiz (find on the model / name the highlighted structure, missed structures come back more often), exam checklist with progress, distance measure, scalpel, split-screen compare, bookmarks, Anki CSV export |
+| **Search** | accent-insensitive, multi-word, keyboard navigation (`/` to focus) |
 | **Organ browser** | separate viewer comparing 33 organs across three source datasets (Z-Anatomy / CT / NIH) with MPR slices |
 | **Offline apps** | Windows `.exe` (Electron) + Android `.apk` (Capacitor), assets bundled, OTA web-layer updates |
 

@@ -137,6 +137,9 @@
      zmienne rozwiązują kolor kontekstowo zamiast dwóch wersji tekstu. */
   .info { --info-2: var(--text-faint); --info-accent: var(--accent-ink); }
   .oc-overlay { --info-2: #c7ccd3; --info-accent: #ffd24d; position:absolute; left:10px; top:10px; max-width:70%; background:rgba(20,24,30,0.82); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.12); border-radius:var(--r-sm); padding:6px 10px; font-size:12.5px; color:#f2f3f5; line-height:1.4; box-shadow:var(--shadow-card); }
+  /* etykieta zaznaczenia pod licznikiem (wczesniej oba w lewym gornym rogu, jedno na drugim) */
+  #za-sel { top:40px; }
+  .cv .badge { max-width:38%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .oc-overlay-bottom { left:10px; bottom:10px; right:10px; top:auto; max-width:none; font-size:10.5px; color:#c7ccd3; }
 
   /* ============================================================
@@ -408,6 +411,16 @@ async function loadOcLang(){
   });
 }
 
+// ---- render na zadanie ----------------------------------------------------
+// Trzy panele 3D renderowane 60 kl/s bez przerwy grzaly GPU nawet bez ruchu.
+// Rysujemy, gdy kamera sie rusza, po zmianie rozmiaru, po wczytaniu modelu i
+// przez chwile po kazdej interakcji (klik/klawisz/suwak zmieniaja scene).
+let OC_RENDER_UNTIL = 0;
+const ocKick = (ms = 600) => { OC_RENDER_UNTIL = Math.max(OC_RENDER_UNTIL, performance.now() + ms); };
+['pointerdown','pointermove','pointerup','wheel','keydown','input','change','click','touchmove'].forEach(ev =>
+  window.addEventListener(ev, () => ocKick(ev === 'pointermove' ? 150 : 600), { passive:true, capture:true }));
+window.addEventListener('resize', () => ocKick(800));
+
 // ---- jeden panel 3D --------------------------------------------------------
 function makeViewer(canvasId, infoId, badgeId){
   const canvas = document.getElementById(canvasId);
@@ -432,7 +445,9 @@ function makeViewer(canvasId, infoId, badgeId){
     const w = canvas.clientWidth, h = canvas.clientHeight;
     if (w>0 && (canvas.width !== Math.floor(w*renderer.getPixelRatio()) || canvas.height !== Math.floor(h*renderer.getPixelRatio()))){
       renderer.setSize(w,h,false); camera.aspect = w/h; camera.updateProjectionMatrix();
+      return true;
     }
+    return false;
   }
   // frame() tylko zapisuje bbox — właściwe ustawienie kamery robi pętla render (po resize, gdy aspect jest pewny)
   V.frame = (objs)=>{
@@ -468,7 +483,18 @@ function makeViewer(canvasId, infoId, badgeId){
     V._r = rad;
   }
   V._applyFrame = applyFrame;
+  // wybor dopiero po "stuknieciu" (bez przesuniecia) - wczesniej pointerdown
+  // wybieral strukture na poczatku KAZDEGO obrotu/przesuniecia kamery
+  let down = null, multi = false;
   canvas.addEventListener('pointerdown', e=>{
+    multi = !!down;
+    down = { x:e.clientX, y:e.clientY, id:e.pointerId };
+  });
+  canvas.addEventListener('pointercancel', ()=>{ down = null; });
+  canvas.addEventListener('pointerup', e=>{
+    const d = down; down = null;
+    if (!d || d.id !== e.pointerId || multi) { multi = false; return; }
+    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > (e.pointerType === 'touch' ? 12 : 5)) return;
     const rc = canvas.getBoundingClientRect();
     ptr.x = ((e.clientX-rc.left)/rc.width)*2-1;
     ptr.y = -((e.clientY-rc.top)/rc.height)*2+1;
@@ -477,12 +503,13 @@ function makeViewer(canvasId, infoId, badgeId){
     const hit = raycaster.intersectObjects(pool, false)[0];
     if (V.onpick) V.onpick(hit ? hit.object : null);
   });
+  controls.addEventListener('change', ()=> ocKick(200));
   (function loop(){
     requestAnimationFrame(loop);
-    resize();
-    if (V._pending && canvas.clientWidth > 0){ applyFrame(V._pending); V._pending = null; }
-    controls.update();
-    renderer.render(scene,camera);
+    let need = resize();
+    if (V._pending && canvas.clientWidth > 0){ applyFrame(V._pending); V._pending = null; need = true; }
+    if (controls.update()) need = true;
+    if (need || performance.now() < OC_RENDER_UNTIL) renderer.render(scene,camera);
   })();
   return V;
 }
@@ -500,6 +527,7 @@ async function loadGLBInto(V, url){
     }
   });
   V.grp.add(g.scene);
+  ocKick(1000);
   return meshes;
 }
 
@@ -916,6 +944,7 @@ async function loadGLBMeshes(url){
     o.material.emissive = new THREE.Color(0x000000);
     meshes.push(o);
   }});
+  ocKick(1000);
   return { meshes };
 }
 
@@ -1041,7 +1070,7 @@ async function renderNIH(){
         o.material = new THREE.MeshStandardMaterial({ color:0xcf8a7a, roughness:0.55, metalness:0, side:THREE.DoubleSide });
         o.name = slug; o.userData.slug = slug; NIH.meshes.push(o);
       }});
-      NIH.grp.add(g.scene); NIH.loaded.add(slug);
+      NIH.grp.add(g.scene); NIH.loaded.add(slug); ocKick(1000);
     }
     NIH.meshes.filter(m=>m.userData.slug===slug).forEach(m=>{ m.visible=true; shown.push(m); });
   }
